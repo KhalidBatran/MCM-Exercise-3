@@ -7,7 +7,7 @@ app = Dash(__name__)
 app.title = "MCM7183 Exercise 3"
 server = app.server
 
-df = pd.read_csv("https://raw.githubusercontent.com/wenjiun/MCM7183Exercise3/main/assets/gdp_1960_2020.csv")
+df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/gdp_1960_2020.csv")
 subset_Malaysia = df[df['country'].isin(["Malaysia"])]
 fig = px.scatter(subset_Malaysia, x="year", y="gdp")
 
