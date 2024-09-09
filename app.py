@@ -17,7 +17,8 @@ app.layout = [html.H1('MCM7183 Exercise 3'),
               html.Img(src=image_path), 
               dcc.Dropdown(['Malaysia', 'Indonesia', 'China'], 'Malaysia', id='dropdown-country'),
               dcc.Graph(id="graph-scatter"), 
-              dcc.Dropdown(['2020', '2010', '2000'], '2020', id='dropdown-year'),
+              dcc.Dropdown([{'label':'2020', 'value':2020}, {'label':'2010', 'value':2010}, 
+                            {'label':'2000', 'value':2000}], 2020, id='dropdown-year'),
               dcc.Graph(id="graph-pie")]
 
 @callback(
