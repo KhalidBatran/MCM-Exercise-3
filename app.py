@@ -22,6 +22,8 @@ mylabels = ["Asia", "Africa", "America", "Europe","Oceania"]
 pie_df = {'Continent': mylabels,'GDP': pie_data}
 fig2 = px.pie(pie_df,values="GDP",names="Continent")
 
+fig_bar = px.bar(CHN_IND,x='year',y='gdp',color='country',barmode='group',title=f'GDP Comparison: {country_CHN} vs {country_IND} (2000, 2010, 2020)',labels={'gdp': 'GDP in USD', 'year': 'Year'},template='plotly_dark')
+
 image_path = 'assets/logo-mmu.png'
 
 app.layout = [html.H1('MCM7183 Exercise 3'), html.Img(src=image_path), dcc.Graph(figure=fig), dcc.Graph(figure=fig2)]
