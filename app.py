@@ -16,9 +16,7 @@ app.layout = html.Div([
     html.Img(src=image_path),
     dcc.Dropdown(['Malaysia', 'Indonesia', 'China'], 'Malaysia', id='dropdown-country'),
     dcc.Graph(id="graph-scatter"),
-    dcc.Dropdown([{'label': '2020', 'value': 2020}, 
-                  {'label': '2010', 'value': 2010},
-                  {'label': '2000', 'value': 2000}], 2020, id='dropdown-year'),
+    dcc.Slider(min=1960, max=2020, step=10, value=2020, marks={i: str(i) for i in range(1960, 2021, 10)}, id='slider-year'),
     dcc.Graph(id="graph-pie")
 ])
 
@@ -26,7 +24,7 @@ app.layout = html.Div([
     Output('graph-scatter', 'figure'),
     Output('graph-pie', 'figure'),
     Input('dropdown-country', 'value'),
-    Input('dropdown-year', 'value'),
+    Input('slider-year', 'value'),
 )
 def update_graph(country_selected, year_selected):
     # Filter data for the selected country
