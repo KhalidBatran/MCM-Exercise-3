@@ -3,11 +3,11 @@ import pandas as pd
 import plotly.express as px
 
 app = Dash(__name__)
-app.title = "MCM7183 Exercise 3"
+app.title = "Medal Analysis Dashboard"
 server = app.server
 
 # Load the dataset
-df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/gdp_1960_2020.csv")
+df = pd.read_csv("https://github.com/your-repo/cleaned_medals.csv")
 
 image_path = 'assets/logo-mmu.png'
 
