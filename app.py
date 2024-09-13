@@ -62,28 +62,28 @@ app.layout = html.Div([
     Input('slider-year', 'value'),
 )
 def update_graphs(selected_country, selected_gender, selected_discipline, selected_year):
-  # Medal count by country
+    # Medal count by country
     country_filtered = df[df['Country Code'] == selected_country]
     medal_count_by_country = country_filtered.groupby('Medal Type').count().reset_index()
     fig_country = px.bar(medal_count_by_country, x='Medal Type', y='Medal Date', title=f'Medal Count by Type for {selected_country}')
     
-   # Medals by gender
+    # Medals by gender
     gender_filtered = df[df['Gender'] == selected_gender]
     medals_by_gender = gender_filtered.groupby('Medal Type').count().reset_index()
     fig_gender = px.pie(medals_by_gender, values='Medal Date', names='Medal Type', title=f'Medals by Gender: {selected_gender}')
     
-  # Medals by discipline
+    # Medals by discipline
     discipline_filtered = df[df['Sport Discipline'] == selected_discipline]
     medals_by_discipline = discipline_filtered.groupby('Medal Type').count().reset_index()
     fig_discipline = px.bar(medals_by_discipline, x='Medal Type', y='Medal Date', title=f'Medals by Discipline: {selected_discipline}')
     
-   # Medal timeline
+    # Medal timeline
     df['Medal Date'] = pd.to_datetime(df['Medal Date'])
     year_filtered = df[df['Medal Date'].dt.year == selected_year]
     medal_timeline = year_filtered.groupby('Medal Date')['Medal Type'].count().reset_index()
     fig_timeline = px.line(medal_timeline, x='Medal Date', y='Medal Type', title=f'Medal Timeline for {selected_year}')
     
-  return fig_country, fig_gender, fig_discipline, fig_timeline
+    return fig_country, fig_gender, fig_discipline, fig_timeline
 
 if __name__ == '__main__':
     app.run(debug=True)
