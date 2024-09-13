@@ -9,15 +9,46 @@ server = app.server
 # Load the dataset
 df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv")
 
-image_path = 'assets/logo-mmu.png'
-
 app.layout = html.Div([
-    html.H1('MCM7183 Exercise 3'),
-    html.Img(src=image_path),
-    dcc.Dropdown(['Malaysia', 'Indonesia', 'China'], 'Malaysia', id='dropdown-country'),
-    dcc.Graph(id="graph-scatter"),
-    dcc.Slider(min=1960, max=2020, step=10, value=2020, marks={i: str(i) for i in range(1960, 2021, 10)}, id='slider-year'),
-    dcc.Graph(id="graph-pie")
+    html.H1('Medal Analysis Dashboard'),
+    
+    dcc.Dropdown(
+        id='dropdown-country',
+        options=[{'label': country, 'value': country} for country in df['Country Code'].unique()],
+        value='USA',
+        placeholder='Select a Country'
+    ),
+    
+    dcc.Graph(id="medal-count-by-country"),
+    
+    dcc.Dropdown(
+        id='dropdown-gender',
+        options=[{'label': gender, 'value': gender} for gender in df['Gender'].unique()],
+        value='M',
+        placeholder='Select Gender'
+    ),
+    
+    dcc.Graph(id="medals-by-gender"),
+    
+    dcc.Dropdown(
+        id='dropdown-discipline',
+        options=[{'label': discipline, 'value': discipline} for discipline in df['Sport Discipline'].unique()],
+        value='Cycling',
+        placeholder='Select Discipline'
+    ),
+    
+    dcc.Graph(id="medals-by-discipline"),
+    
+    dcc.Slider(
+        id='slider-year',
+        min=df['Medal Date'].min().year,
+        max=df['Medal Date'].max().year,
+        step=1,
+        value=df['Medal Date'].max().year,
+        marks={str(year): str(year) for year in range(df['Medal Date'].min().year, df['Medal Date'].max().year + 1, 5)}
+    ),
+    
+    dcc.Graph(id="medal-timeline")
 ])
 
 @callback(
