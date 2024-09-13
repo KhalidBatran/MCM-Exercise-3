@@ -7,7 +7,7 @@ app.title = "Medal Analysis Dashboard"
 server = app.server
 
 # Load the dataset
-df = pd.read_csv("https://github.com/your-repo/cleaned_medals.csv")
+df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv")
 
 image_path = 'assets/logo-mmu.png'
 
