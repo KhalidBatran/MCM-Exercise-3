@@ -9,6 +9,12 @@ server = app.server
 # Load the dataset
 df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv")
 
+# Convert 'Medal Date' to datetime and handle any errors by coercing invalid dates to NaT
+df['Medal Date'] = pd.to_datetime(df['Medal Date'], errors='coerce')
+
+# Filter out rows where 'Medal Date' is NaT (invalid dates)
+df = df[df['Medal Date'].notna()]
+
 app.layout = html.Div([
     html.H1('Medal Analysis Dashboard'),
     
@@ -41,11 +47,11 @@ app.layout = html.Div([
     
     dcc.Slider(
         id='slider-year',
-        min=df['Medal Date'].min().year,
-        max=df['Medal Date'].max().year,
+        min=df['Medal Date'].dt.year.min(),
+        max=df['Medal Date'].dt.year.max(),
         step=1,
-        value=df['Medal Date'].max().year,
-        marks={str(year): str(year) for year in range(df['Medal Date'].min().year, df['Medal Date'].max().year + 1, 5)}
+        value=df['Medal Date'].dt.year.max(),
+        marks={str(year): str(year) for year in range(df['Medal Date'].dt.year.min(), df['Medal Date'].dt.year.max() + 1, 5)}
     ),
     
     dcc.Graph(id="medal-timeline")
@@ -78,7 +84,6 @@ def update_graphs(selected_country, selected_gender, selected_discipline, select
     fig_discipline = px.bar(medals_by_discipline, x='Medal Type', y='Medal Date', title=f'Medals by Discipline: {selected_discipline}')
     
     # Medal timeline
-    df['Medal Date'] = pd.to_datetime(df['Medal Date'])
     year_filtered = df[df['Medal Date'].dt.year == selected_year]
     medal_timeline = year_filtered.groupby('Medal Date')['Medal Type'].count().reset_index()
     fig_timeline = px.line(medal_timeline, x='Medal Date', y='Medal Type', title=f'Medal Timeline for {selected_year}')
