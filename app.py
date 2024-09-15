@@ -6,13 +6,16 @@ app = Dash(__name__)
 app.title = "Olympics 2024"
 server = app.server
 
-df = pd.read_csv('https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv')
-df['Medal Date'] = pd.to_datetime(df['Medal Date'], errors='coerce')
-df = df[df['Medal Date'].notna()]
+try:
+    df = pd.read_csv('https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv')
+    df['Medal Date'] = pd.to_datetime(df['Medal Date'], errors='coerce')
+    df = df[df['Medal Date'].notna()]
+    print("Data loaded and processed successfully.")
+except Exception as e:
+    print("Failed to load or process data:", e)
 
 app.layout = html.Div([
     html.H1('Olympics 2024'),
-
     dcc.Tabs([
         dcc.Tab(label='Medal Count by Country', children=[
             dcc.Dropdown(
