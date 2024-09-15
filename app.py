@@ -1,6 +1,5 @@
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import dcc, html
 import pandas as pd
 from dash.dependencies import Input, Output
 
@@ -11,9 +10,10 @@ df = pd.read_csv(url)
 # Convert data types if necessary
 df['Country Code'] = df['Country Code'].astype(str)  # Ensure country codes are string if they are numeric
 df['Medal Date'] = pd.to_datetime(df['Medal Date'])  # Convert dates if they are not in datetime format
+df = df.sort_values('Medal Date')  # Sort data by date
 
 # Example of preparing data for a slider or dropdown that needs integer keys
-slider_marks = {int(i): {'label': str(date.strftime('%b %d'))} for i, date in enumerate(df['Medal Date'].dt.date.unique())}
+slider_marks = {i: {'label': date.strftime('%b %d')} for i, date in enumerate(df['Medal Date'].dt.date.unique())}
 
 # Initialize the Dash app (assuming it's not already running)
 app = dash.Dash(__name__)
