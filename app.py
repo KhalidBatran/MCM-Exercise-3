@@ -1,6 +1,6 @@
 import dash
 import dash_bootstrap_components as dbc
-from dash import dcc, html, Input, Output, State
+from dash import dcc, html, Input, Output
 import pandas as pd
 import plotly.graph_objs as go
 
@@ -16,31 +16,33 @@ server = app.server
 
 app.layout = dbc.Container([
     dbc.Row([
-        dbc.Col([
-            html.H1("Olympics Medal Dashboard", className="text-center"),
-            dcc.Dropdown(
-                id='country-dropdown',
-                options=[{'label': country, 'value': country} for country in df['Country Code'].unique()],
-                value=None,
-                placeholder="Select a country",
-                multi=True
-            ),
-            dcc.Dropdown(
-                id='gender-dropdown',
-                options=[{'label': gender, 'value': gender} for gender in df['Gender'].unique()],
-                value=None,
-                placeholder="Select a gender",
-                multi=True
-            ),
-            dcc.Dropdown(
-                id='medal-dropdown',
-                options=[{'label': medal, 'value': medal} for medal in df['Medal Type'].unique()],
-                value=None,
-                placeholder="Select medal type",
-                multi=True
-            ),
-            dcc.Graph(id='medal-graph')
-        ], width=12)
+        dbc.Col(html.H1("Olympics Medal Dashboard", className="text-center mb-4"), width=12)
+    ]),
+    dbc.Row([
+        dbc.Col(dcc.Dropdown(
+            id='country-dropdown',
+            options=[{'label': country, 'value': country} for country in df['Country Code'].unique()],
+            value=df['Country Code'].unique(),
+            placeholder="Select a country",
+            multi=True
+        ), width=4),
+        dbc.Col(dcc.Dropdown(
+            id='gender-dropdown',
+            options=[{'label': gender, 'value': gender} for gender in df['Gender'].unique()],
+            value=df['Gender'].unique(),
+            placeholder="Select a gender",
+            multi=True
+        ), width=4),
+        dbc.Col(dcc.Dropdown(
+            id='medal-dropdown',
+            options=[{'label': medal, 'value': medal} for medal in df['Medal Type'].unique()],
+            value=df['Medal Type'].unique(),
+            placeholder="Select medal type",
+            multi=True
+        ), width=4)
+    ]),
+    dbc.Row([
+        dbc.Col(dcc.Graph(id='medal-graph'), width=12)
     ])
 ])
 
