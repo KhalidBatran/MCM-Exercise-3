@@ -1,154 +1,94 @@
 from dash import Dash, html, dcc, callback, Input, Output
 import pandas as pd
 import plotly.express as px
-import dash_bootstrap_components as dbc
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(__name__)
+app.title = "Olympics 2024"
 server = app.server
 
-# Load the dataset from the GitHub URL
 df = pd.read_csv('https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv')
+
 df['Medal Date'] = pd.to_datetime(df['Medal Date'], errors='coerce')
 df = df[df['Medal Date'].notna()]
 
-app.layout = dbc.Container(
-    [
-        html.H1("Olympics 2024"),
-        dcc.Tabs(
-            [
-                dcc.Tab(label="Medal Count by Country", value="tab-1"),
-                dcc.Tab(label="Medals by Discipline", value="tab-3"),
-                dcc.Tab(label="Medal Timeline", value="tab-4"),
-            ],
-            id="tabs",
-            value="tab-1",
-        ),
-        dcc.Store(id="store"),
-        html.Div(id="tab-content", className="p-4"),
-    ]
-)
+app.layout = html.Div([
+    html.H1('Olympics 2024'),
 
-@app.callback(
-    Output("tab-content", "children"),
-    [Input("tabs", "value")]
-)
-def render_tab_content(active_tab):
-    if active_tab == "tab-1":
-        return html.Div([
-            html.Div([
-                dcc.Dropdown(
-                    id='dropdown-country-1',
-                    options=[{'label': 'All Countries', 'value': 'ALL'}] + 
-                            [{'label': country, 'value': country} for country in df['Country Code'].unique()],
-                    value='ALL',
-                    placeholder='Select a Country',
-                    style={'width': '25%', 'margin': '0 auto', 'display': 'inline-block'}
-                ),
-                dcc.Dropdown(
-                    id='dropdown-gender-1',
-                    options=[{'label': 'All Genders', 'value': 'ALL'}] + 
-                            [{'label': gender, 'value': gender} for gender in df['Gender'].unique()],
-                    value='ALL',
-                    placeholder='Select Gender',
-                    style={'width': '25%', 'margin': '0 auto', 'display': 'inline-block'}
-                ),
-                dcc.Dropdown(
-                    id='dropdown-medal-type-1',
-                    options=[{'label': 'All Medals', 'value': 'ALL'}, 
-                             {'label': 'Gold', 'value': 'Gold Medal'},
-                             {'label': 'Silver', 'value': 'Silver Medal'},
-                             {'label': 'Bronze', 'value': 'Bronze Medal'}],
-                    value='ALL',
-                    placeholder='Select Medal Type',
-                    style={'width': '25%', 'margin': '0 auto', 'display': 'inline-block'}
-                )
-            ], style={'display': 'flex', 'justify-content': 'center', 'gap': '20px'}),
-            dcc.Graph(id="medal-count-by-country")
-        ])
-    
-    elif active_tab == "tab-3":
-        return html.Div([
+    dcc.Tabs([
+        dcc.Tab(label='Medal Count by Country', children=[
             dcc.Dropdown(
-                id='dropdown-discipline-3',
-                options=[{'label': discipline, 'value': discipline} for discipline in df['Sport Discipline'].unique()],
-                value='ALL',
-                placeholder='Select a Discipline',
-                style={'width': '30%', 'margin': '0 auto', 'display': 'inline-block'}
+                id='dropdown-country',
+                options=[{'label': country, 'value': country} for country in df['Country Code'].unique()],
+                value='All Countries',
+                placeholder='Select a Country',
+                style={'width': '50%'}
             ),
+            dcc.Dropdown(
+                id='dropdown-medal-type',
+                options=[{'label': medal, 'value': medal} for medal in df['Medal Type'].unique()],
+                value='All Medals',
+                placeholder='Select Medal Type',
+                style={'width': '50%'}
+            ),
+            dcc.Graph(id='medal-count-by-country-graph')
+        ]),
+        dcc.Tab(label='Medals by Discipline', children=[
             dcc.Slider(
-                id='slider-date-3',
-                min=df['Medal Date'].min().timestamp(),
-                max=df['Medal Date'].max().timestamp(),
-                value=df['Medal Date'].max().timestamp(),
-                marks={pd.Timestamp(x).strftime('%Y-%m-%d'): pd.Timestamp(x).strftime('%Y-%m-%d') for x in pd.date_range(df['Medal Date'].min(), df['Medal Date'].max(), periods=6)},
-                step=None,
-                updatemode='drag'
+                id='date-slider',
+                min=df['Medal Date'].dt.dayofyear.min(),
+                max=df['Medal Date'].dt.dayofyear.max(),
+                value=df['Medal Date'].dt.dayofyear.min(),
+                marks={int(date): {'label': str(date)} for date in df['Medal Date'].dt.strftime('%b %d').unique()},
+                step=None
             ),
-            dcc.Graph(id="medals-by-discipline")
-        ])
-
-    elif active_tab == "tab-4":
-        return html.Div([
-            dcc.DatePickerRange(
-                id='date-picker-4',
-                min_date_allowed=df['Medal Date'].min().date(),
-                max_date_allowed=df['Medal Date'].max().date(),
-                start_date=df['Medal Date'].min().date(),
-                end_date=df['Medal Date'].max().date()
+            dcc.Graph(id='medals-by-discipline-graph')
+        ]),
+        dcc.Tab(label='Medal Timeline', children=[
+            dcc.Dropdown(
+                id='dropdown-timeline-type',
+                options=[{'label': medal, 'value': medal} for medal in df['Medal Type'].unique()],
+                value='All Medals',
+                placeholder='Select Medal Type',
+                style={'width': '50%'}
             ),
-            dcc.Graph(id="medal-timeline")
+            dcc.Graph(id='medal-timeline-graph')
         ])
+    ])
+])
 
-@app.callback(
-    Output('medal-count-by-country', 'figure'),
-    [Input('dropdown-country-1', 'value'),
-     Input('dropdown-gender-1', 'value'),
-     Input('dropdown-medal-type-1', 'value')]
+@callback(
+    Output('medal-count-by-country-graph', 'figure'),
+    Input('dropdown-country', 'value'),
+    Input('dropdown-medal-type', 'value')
 )
-def update_country_medals(selected_country, selected_gender, selected_medal):
-    filtered_df = df.copy()
-
-    if selected_country != 'ALL':
+def update_medal_count_by_country(selected_country, selected_medal_type):
+    filtered_df = df
+    if selected_country != 'All Countries':
         filtered_df = filtered_df[filtered_df['Country Code'] == selected_country]
-    if selected_gender != 'ALL':
-        filtered_df = filtered_df[filtered_df['Gender'] == selected_gender]
-    if selected_medal != 'ALL':
-        filtered_df = filtered_df[filtered_df['Medal Type'] == selected_medal]
+    if selected_medal_type != 'All Medals':
+        filtered_df = filtered_df[filtered_df['Medal Type'] == selected_medal_type]
+    fig = px.bar(filtered_df, x='Country Code', y='Count', color='Medal Type')
+    return fig
 
-    fig_country = px.bar(filtered_df, x='Country Code', y='Medal Type', color='Medal Type',
-                         hover_data={'Athlete Name': True},
-                         title=None)
-    return fig_country
-
-@app.callback(
-    Output('medals-by-discipline', 'figure'),
-    [Input('dropdown-discipline-3', 'value'),
-     Input('slider-date-3', 'value')]
+@callback(
+    Output('medals-by-discipline-graph', 'figure'),
+    Input('date-slider', 'value')
 )
-def update_discipline_medals(selected_discipline, selected_date):
-    selected_date = pd.to_datetime(selected_date, unit='s')
-    filtered_df = df.copy()
-    
-    if selected_discipline != 'ALL':
-        filtered_df = filtered_df[filtered_df['Sport Discipline'] == selected_discipline]
+def update_medals_by_discipline(selected_date):
+    filtered_df = df[df['Medal Date'].dt.dayofyear == selected_date]
+    fig = px.bar(filtered_df, x='Discipline', y='Count', color='Country Code')
+    return fig
 
-    filtered_df = filtered_df[filtered_df['Medal Date'].dt.date == selected_date.date()]
-
-    fig_discipline = px.bar(filtered_df, x='Country Code', y='Medal Type', color='Medal Type',
-                            title=None)
-    return fig_discipline
-
-@app.callback(
-    Output('medal-timeline', 'figure'),
-    [Input('date-picker-4', 'start_date'),
-     Input('date-picker-4', 'end_date')]
+@callback(
+    Output('medal-timeline-graph', 'figure'),
+    Input('dropdown-timeline-type', 'value')
 )
-def update_timeline(start_date, end_date):
-    filtered_df = df[(df['Medal Date'] >= start_date) & (df['Medal Date'] <= end_date)]
+def update_medal_timeline(selected_medal_type):
+    filtered_df = df
+    if selected_medal_type != 'All Medals':
+        filtered_df = filtered_df[filtered_df['Medal Type'] == selected_medal_type]
+    fig = px.line(filtered_df, x='Medal Date', y='Count', color='Medal Type')
+    return fig
 
-    fig_timeline = px.line(filtered_df, x='Medal Date', y='Medal Type', color='Country Code',
-                           title=None)
-    return fig_timeline
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run_server(debug=True)
