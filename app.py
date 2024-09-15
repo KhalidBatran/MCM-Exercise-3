@@ -13,6 +13,7 @@ df['Gender'] = df['Gender'].astype(str)
 df['Medal Type'] = df['Medal Type'].astype(str)
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server  # Define server for Gunicorn
 
 app.layout = dbc.Container([
     html.H1("Olympics Medal Dashboard", className="text-center"),
