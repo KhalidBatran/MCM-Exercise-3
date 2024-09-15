@@ -2,7 +2,6 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
-import numpy as np
 from dash.dependencies import Input, Output
 
 # Load your data
@@ -18,6 +17,7 @@ slider_marks = {int(i): {'label': str(date.strftime('%b %d'))} for i, date in en
 
 # Initialize the Dash app (assuming it's not already running)
 app = dash.Dash(__name__)
+server = app.server  # Define the server to be used by Gunicorn
 
 app.layout = html.Div([
     dcc.Graph(id='medal-graph'),
