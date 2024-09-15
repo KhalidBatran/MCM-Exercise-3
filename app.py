@@ -7,10 +7,11 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 
 # Load the dataset
-df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv")
+df = pd.read_csv('/mnt/data/cleaned_medals.csv')
 df['Medal Date'] = pd.to_datetime(df['Medal Date'], errors='coerce')
 df = df[df['Medal Date'].notna()]
 
+# Define the layout with tabs and graphs
 app.layout = dbc.Container(
     [
         html.H1("Olympics 2024"),
@@ -42,7 +43,15 @@ def render_tab_content(active_tab):
                             [{'label': country, 'value': country} for country in df['Country Code'].unique()],
                     value='ALL',
                     placeholder='Select a Country',
-                    style={'width': '30%', 'margin': '0 auto', 'display': 'inline-block'}
+                    style={'width': '25%', 'margin': '0 auto', 'display': 'inline-block'}
+                ),
+                dcc.Dropdown(
+                    id='dropdown-gender-1',
+                    options=[{'label': 'All Genders', 'value': 'ALL'}] + 
+                            [{'label': gender, 'value': gender} for gender in df['Gender'].unique()],
+                    value='ALL',
+                    placeholder='Select Gender',
+                    style={'width': '25%', 'margin': '0 auto', 'display': 'inline-block'}
                 ),
                 dcc.Dropdown(
                     id='dropdown-medal-type-1',
@@ -52,7 +61,7 @@ def render_tab_content(active_tab):
                              {'label': 'Bronze', 'value': 'Bronze Medal'}],
                     value='ALL',
                     placeholder='Select Medal Type',
-                    style={'width': '30%', 'margin': '0 auto', 'display': 'inline-block'}
+                    style={'width': '25%', 'margin': '0 auto', 'display': 'inline-block'}
                 )
             ], style={'display': 'flex', 'justify-content': 'center', 'gap': '20px'}),
             dcc.Graph(id="medal-count-by-country")
@@ -63,7 +72,7 @@ def render_tab_content(active_tab):
             dcc.Dropdown(
                 id='dropdown-discipline-3',
                 options=[{'label': discipline, 'value': discipline} for discipline in df['Sport Discipline'].unique()],
-                value=df['Sport Discipline'].unique()[0],
+                value='ALL',
                 placeholder='Select a Discipline',
                 style={'width': '30%', 'margin': '0 auto', 'display': 'inline-block'}
             ),
@@ -94,13 +103,16 @@ def render_tab_content(active_tab):
 @app.callback(
     Output('medal-count-by-country', 'figure'),
     [Input('dropdown-country-1', 'value'),
+     Input('dropdown-gender-1', 'value'),
      Input('dropdown-medal-type-1', 'value')]
 )
-def update_country_medals(selected_country, selected_medal):
+def update_country_medals(selected_country, selected_gender, selected_medal):
     filtered_df = df.copy()
 
     if selected_country != 'ALL':
         filtered_df = filtered_df[filtered_df['Country Code'] == selected_country]
+    if selected_gender != 'ALL':
+        filtered_df = filtered_df[filtered_df['Gender'] == selected_gender]
     if selected_medal != 'ALL':
         filtered_df = filtered_df[filtered_df['Medal Type'] == selected_medal]
 
@@ -116,8 +128,12 @@ def update_country_medals(selected_country, selected_medal):
 )
 def update_discipline_medals(selected_discipline, selected_date):
     selected_date = pd.to_datetime(selected_date, unit='s')
-    filtered_df = df[(df['Sport Discipline'] == selected_discipline) & 
-                     (df['Medal Date'] == selected_date)]
+    filtered_df = df.copy()
+    
+    if selected_discipline != 'ALL':
+        filtered_df = filtered_df[filtered_df['Sport Discipline'] == selected_discipline]
+
+    filtered_df = filtered_df[filtered_df['Medal Date'].dt.date == selected_date.date()]
 
     fig_discipline = px.bar(filtered_df, x='Country Code', y='Medal Type', color='Medal Type',
                             title=None)
