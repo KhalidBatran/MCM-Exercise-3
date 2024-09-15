@@ -6,10 +6,9 @@ import dash_bootstrap_components as dbc
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 
-# Load the dataset
-df = pd.read_csv('/mnt/data/cleaned_medals.csv')
+# Load the dataset from an online source
+df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv")
 
-# Convert 'Medal Date' to datetime and handle any errors by coercing invalid dates to NaT
 df['Medal Date'] = pd.to_datetime(df['Medal Date'], errors='coerce')
 df = df[df['Medal Date'].notna()]
 
