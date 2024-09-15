@@ -7,7 +7,6 @@ app.title = "Olympics 2024"
 server = app.server
 
 df = pd.read_csv('https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv')
-
 df['Medal Date'] = pd.to_datetime(df['Medal Date'], errors='coerce')
 df = df[df['Medal Date'].notna()]
 
@@ -18,16 +17,14 @@ app.layout = html.Div([
         dcc.Tab(label='Medal Count by Country', children=[
             dcc.Dropdown(
                 id='dropdown-country',
-                options=[{'label': country, 'value': country} for country in df['Country Code'].unique()],
-                value='All Countries',
-                placeholder='Select a Country',
+                options=[{'label': 'All Countries', 'value': 'All'}] + [{'label': c, 'value': c} for c in df['Country Code'].unique()],
+                value='All',
                 style={'width': '50%'}
             ),
             dcc.Dropdown(
                 id='dropdown-medal-type',
-                options=[{'label': medal, 'value': medal} for medal in df['Medal Type'].unique()],
-                value='All Medals',
-                placeholder='Select Medal Type',
+                options=[{'label': 'All Medals', 'value': 'All'}] + [{'label': m, 'value': m} for m in df['Medal Type'].unique()],
+                value='All',
                 style={'width': '50%'}
             ),
             dcc.Graph(id='medal-count-by-country-graph')
@@ -38,19 +35,12 @@ app.layout = html.Div([
                 min=df['Medal Date'].dt.dayofyear.min(),
                 max=df['Medal Date'].dt.dayofyear.max(),
                 value=df['Medal Date'].dt.dayofyear.min(),
-                marks={int(date): {'label': str(date)} for date in df['Medal Date'].dt.strftime('%b %d').unique()},
+                marks={d: {'label': date.strftime('%b %d')} for d, date in zip(df['Medal Date'].dt.dayofyear.unique(), df['Medal Date'].unique())},
                 step=None
             ),
             dcc.Graph(id='medals-by-discipline-graph')
         ]),
         dcc.Tab(label='Medal Timeline', children=[
-            dcc.Dropdown(
-                id='dropdown-timeline-type',
-                options=[{'label': medal, 'value': medal} for medal in df['Medal Type'].unique()],
-                value='All Medals',
-                placeholder='Select Medal Type',
-                style={'width': '50%'}
-            ),
             dcc.Graph(id='medal-timeline-graph')
         ])
     ])
@@ -62,12 +52,9 @@ app.layout = html.Div([
     Input('dropdown-medal-type', 'value')
 )
 def update_medal_count_by_country(selected_country, selected_medal_type):
-    filtered_df = df
-    if selected_country != 'All Countries':
-        filtered_df = filtered_df[filtered_df['Country Code'] == selected_country]
-    if selected_medal_type != 'All Medals':
-        filtered_df = filtered_df[filtered_df['Medal Type'] == selected_medal_type]
-    fig = px.bar(filtered_df, x='Country Code', y='Count', color='Medal Type')
+    filtered_df = df if selected_country == 'All' else df[df['Country Code'] == selected_country]
+    filtered_df = filtered_df if selected_medal_type == 'All' else filtered_df[filtered_df['Medal Type'] == selected_medal_type]
+    fig = px.bar(filtered_df, x='Country Code', y='Medal Type', title="Medals by Country")
     return fig
 
 @callback(
@@ -76,18 +63,16 @@ def update_medal_count_by_country(selected_country, selected_medal_type):
 )
 def update_medals_by_discipline(selected_date):
     filtered_df = df[df['Medal Date'].dt.dayofyear == selected_date]
-    fig = px.bar(filtered_df, x='Discipline', y='Count', color='Country Code')
+    fig = px.bar(filtered_df, x='Discipline', y='Medal Type', color='Country Code', title="Medals by Discipline")
     return fig
 
 @callback(
     Output('medal-timeline-graph', 'figure'),
-    Input('dropdown-timeline-type', 'value')
+    Input('date-slider', 'value')
 )
-def update_medal_timeline(selected_medal_type):
-    filtered_df = df
-    if selected_medal_type != 'All Medals':
-        filtered_df = filtered_df[filtered_df['Medal Type'] == selected_medal_type]
-    fig = px.line(filtered_df, x='Medal Date', y='Count', color='Medal Type')
+def update_medal_timeline(selected_date):
+    filtered_df = df[df['Medal Date'].dt.dayofyear == selected_date]
+    fig = px.line(filtered_df, x='Medal Date', y='Medal Type', color='Country Code', title="Medal Timeline")
     return fig
 
 if __name__ == '__main__':
