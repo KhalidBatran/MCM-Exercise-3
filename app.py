@@ -1,82 +1,55 @@
-from dash import Dash, html, dcc, callback, Input, Output
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
 import pandas as pd
-import plotly.express as px
+import numpy as np
+from dash.dependencies import Input, Output
 
-app = Dash(__name__)
-app.title = "Olympics 2024"
-server = app.server
+# Load your data
+url = "https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv"
+df = pd.read_csv(url)
 
-try:
-    df = pd.read_csv('https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv')
-    df['Medal Date'] = pd.to_datetime(df['Medal Date'], errors='coerce')
-    df = df[df['Medal Date'].notna()]
-    print("Data loaded and processed successfully.")
-except Exception as e:
-    print("Failed to load or process data:", e)
+# Convert data types if necessary
+df['Country Code'] = df['Country Code'].astype(str)  # Ensure country codes are string if they are numeric
+df['Medal Date'] = pd.to_datetime(df['Medal Date'])  # Convert dates if they are not in datetime format
+
+# Example of preparing data for a slider or dropdown that needs integer keys
+slider_marks = {int(i): {'label': str(date.strftime('%b %d'))} for i, date in enumerate(df['Medal Date'].dt.date.unique())}
+
+# Initialize the Dash app (assuming it's not already running)
+app = dash.Dash(__name__)
 
 app.layout = html.Div([
-    html.H1('Olympics 2024'),
-    dcc.Tabs([
-        dcc.Tab(label='Medal Count by Country', children=[
-            dcc.Dropdown(
-                id='dropdown-country',
-                options=[{'label': 'All Countries', 'value': 'All'}] + [{'label': c, 'value': c} for c in df['Country Code'].unique()],
-                value='All',
-                style={'width': '50%'}
-            ),
-            dcc.Dropdown(
-                id='dropdown-medal-type',
-                options=[{'label': 'All Medals', 'value': 'All'}] + [{'label': m, 'value': m} for m in df['Medal Type'].unique()],
-                value='All',
-                style={'width': '50%'}
-            ),
-            dcc.Graph(id='medal-count-by-country-graph')
-        ]),
-        dcc.Tab(label='Medals by Discipline', children=[
-            dcc.Slider(
-                id='date-slider',
-                min=df['Medal Date'].dt.dayofyear.min(),
-                max=df['Medal Date'].dt.dayofyear.max(),
-                value=df['Medal Date'].dt.dayofyear.min(),
-                marks={d: {'label': date.strftime('%b %d')} for d, date in zip(df['Medal Date'].dt.dayofyear.unique(), df['Medal Date'].unique())},
-                step=None
-            ),
-            dcc.Graph(id='medals-by-discipline-graph')
-        ]),
-        dcc.Tab(label='Medal Timeline', children=[
-            dcc.Graph(id='medal-timeline-graph')
-        ])
-    ])
+    dcc.Graph(id='medal-graph'),
+    dcc.Slider(
+        id='date-slider',
+        min=0,
+        max=len(slider_marks) - 1,
+        value=0,
+        marks=slider_marks,
+        step=None
+    )
 ])
 
-@callback(
-    Output('medal-count-by-country-graph', 'figure'),
-    Input('dropdown-country', 'value'),
-    Input('dropdown-medal-type', 'value')
+@app.callback(
+    Output('medal-graph', 'figure'),
+    [Input('date-slider', 'value')]
 )
-def update_medal_count_by_country(selected_country, selected_medal_type):
-    filtered_df = df if selected_country == 'All' else df[df['Country Code'] == selected_country]
-    filtered_df = filtered_df if selected_medal_type == 'All' else filtered_df[filtered_df['Medal Type'] == selected_medal_type]
-    fig = px.bar(filtered_df, x='Country Code', y='Medal Type', title="Medals by Country")
-    return fig
-
-@callback(
-    Output('medals-by-discipline-graph', 'figure'),
-    Input('date-slider', 'value')
-)
-def update_medals_by_discipline(selected_date):
-    filtered_df = df[df['Medal Date'].dt.dayofyear == selected_date]
-    fig = px.bar(filtered_df, x='Discipline', y='Medal Type', color='Country Code', title="Medals by Discipline")
-    return fig
-
-@callback(
-    Output('medal-timeline-graph', 'figure'),
-    Input('date-slider', 'value')
-)
-def update_medal_timeline(selected_date):
-    filtered_df = df[df['Medal Date'].dt.dayofyear == selected_date]
-    fig = px.line(filtered_df, x='Medal Date', y='Medal Type', color='Country Code', title="Medal Timeline")
-    return fig
+def update_graph(slider_value):
+    # Filter data based on slider
+    date_selected = list(slider_marks.values())[slider_value]['label']
+    filtered_df = df[df['Medal Date'].dt.strftime('%b %d') == date_selected]
+    
+    # Generate figure
+    figure = {
+        'data': [
+            {'x': filtered_df['Country Code'], 'y': filtered_df['Medal Count'], 'type': 'bar', 'name': 'Medals'}
+        ],
+        'layout': {
+            'title': 'Medal Count by Country for ' + date_selected
+        }
+    }
+    return figure
 
 if __name__ == '__main__':
     app.run_server(debug=True)
