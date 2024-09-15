@@ -1,69 +1,72 @@
-import dash
+from dash import Dash, html, dcc, callback, Input, Output
 import dash_bootstrap_components as dbc
-from dash import dcc, html, Input, Output
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 
-url = "https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv"
-df = pd.read_csv(url)
+app = Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
+server = app.server
 
-# Convert and clean up the data as necessary
-df['Country Code'] = df['Country Code'].astype(str)
-df['Gender'] = df['Gender'].astype(str)
-df['Medal Type'] = df['Medal Type'].astype(str)
-
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-server = app.server  # Define server for Gunicorn
+df = pd.read_csv('https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv')
 
 app.layout = dbc.Container([
-    html.H1("Olympics Medal Dashboard", className="text-center"),
     dbc.Row([
-        dbc.Col(dcc.Dropdown(
-            id='country-dropdown',
-            options=[{'label': x, 'value': x} for x in df['Country Code'].unique()],
-            value='All',
-            multi=False,
-            placeholder='Select a Country',
-        ), width=4),
-        dbc.Col(dcc.Dropdown(
-            id='gender-dropdown',
-            options=[{'label': x, 'value': x} for x in df['Gender'].unique()],
-            value='All',
-            multi=False,
-            placeholder='Select Gender',
-        ), width=4),
-        dbc.Col(dcc.Dropdown(
-            id='medal-dropdown',
-            options=[{'label': 'All', 'value': 'All'}] + [{'label': x, 'value': x} for x in df['Medal Type'].unique()],
-            value='All',
-            multi=False,
-            placeholder='Select Medal Type',
-        ), width=4),
+        dbc.Col(html.H1("Medals Count by Country", className='text-center mb-4'), width=12)
     ]),
     dbc.Row([
-        dbc.Col(dcc.Graph(id='medal-graph'), width=12)
+        dbc.Col([
+            dcc.Dropdown(id='filter-country', 
+                         options=[{'label': country, 'value': country} for country in df['Country_Code'].unique()],
+                         value=[], 
+                         multi=True, 
+                         placeholder="Select Country(s)")
+        ], width=4),
+        dbc.Col([
+            dcc.Dropdown(id='filter-gender', 
+                         options=[{'label': gender, 'value': gender} for gender in df['Gender'].unique()],
+                         value='All', 
+                         multi=False, 
+                         placeholder="Select Gender")
+        ], width=4),
+        dbc.Col([
+            dcc.Dropdown(id='filter-medal', 
+                         options=[{'label': medal, 'value': medal} for medal in df['Medal_Type'].unique()],
+                         value=[], 
+                         multi=True, 
+                         placeholder="Select Medal Type(s)")
+        ], width=4)
+    ]),
+    dbc.Row([
+        dbc.Col(dcc.Graph(id='medals-graph'), width=12)
     ])
 ])
 
-@app.callback(
-    Output('medal-graph', 'figure'),
-    [Input('country-dropdown', 'value'),
-     Input('gender-dropdown', 'value'),
-     Input('medal-dropdown', 'value')]
+@callback(
+    Output('medals-graph', 'figure'),
+    [Input('filter-country', 'value'),
+     Input('filter-gender', 'value'),
+     Input('filter-medal', 'value')]
 )
-def update_graph(selected_country, selected_gender, selected_medal):
-    filtered_df = df
-    if selected_country != 'All':
-        filtered_df = filtered_df[filtered_df['Country Code'] == selected_country]
+def update_graph(selected_countries, selected_gender, selected_medals):
+    filtered_df = df.copy()
+
+    if selected_countries:
+        filtered_df = filtered_df[filtered_df['Country_Code'].isin(selected_countries)]
     if selected_gender != 'All':
         filtered_df = filtered_df[filtered_df['Gender'] == selected_gender]
-    if selected_medal != 'All':
-        filtered_df = filtered_df[filtered_df['Medal Type'] == selected_medal]
-
-    fig = px.bar(filtered_df, x='Country Code', y='Total Medals', color='Medal Type', 
-                 title="Medals Distribution",
-                 labels={'Total Medals': 'Total Medals', 'Country Code': 'Country Code'})
+    if selected_medals:
+        filtered_df = filtered_df[filtered_df['Medal_Type'].isin(selected_medals)]
+    
+    fig = go.Figure(
+        data=[
+            go.Bar(name='Gold', x=filtered_df['Country_Code'], y=filtered_df['Gold'], marker_color='gold'),
+            go.Bar(name='Silver', x=filtered_df['Country_Code'], y=filtered_df['Silver'], marker_color='silver'),
+            go.Bar(name='Bronze', x=filtered_df['Country_Code'], y=filtered_df['Bronze'], marker_color='brown')
+        ]
+    )
+    
+    fig.update_layout(barmode='stack', title="Medals Count by Country")
+    
     return fig
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run(debug=True)
