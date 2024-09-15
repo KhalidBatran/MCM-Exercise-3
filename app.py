@@ -6,12 +6,11 @@ import dash_bootstrap_components as dbc
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 
-# Load the dataset
-df = pd.read_csv('/mnt/data/cleaned_medals.csv')
+# Load the dataset from the GitHub URL
+df = pd.read_csv('https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv')
 df['Medal Date'] = pd.to_datetime(df['Medal Date'], errors='coerce')
 df = df[df['Medal Date'].notna()]
 
-# Define the layout with tabs and graphs
 app.layout = dbc.Container(
     [
         html.H1("Olympics 2024"),
