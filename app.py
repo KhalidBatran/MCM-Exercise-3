@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 app = Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
 server = app.server
 
-# Load the updated dataset
+# Load the dataset
 df = pd.read_csv('https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv')
 
 app.layout = dbc.Container([
@@ -56,12 +56,15 @@ def update_graph(selected_countries, selected_gender, selected_medals):
         filtered_df = filtered_df[filtered_df['Gender'] == selected_gender]
     if selected_medals:
         filtered_df = filtered_df[filtered_df['Medal Type'].isin(selected_medals)]
-    
+
+    # Aggregate data by country and medal type
+    medal_counts = filtered_df.groupby(['Country Code', 'Medal Type']).size().unstack(fill_value=0)
+
     fig = go.Figure(
         data=[
-            go.Bar(name='Gold', x=filtered_df['Country Code'], y=filtered_df['Medal Type'].apply(lambda x: x == 'Gold').sum(), marker_color='gold'),
-            go.Bar(name='Silver', x=filtered_df['Country Code'], y=filtered_df['Medal Type'].apply(lambda x: x == 'Silver').sum(), marker_color='silver'),
-            go.Bar(name='Bronze', x=filtered_df['Country Code'], y=filtered_df['Medal Type'].apply(lambda x: x == 'Bronze').sum(), marker_color='brown')
+            go.Bar(name='Gold', x=medal_counts.index, y=medal_counts['Gold'], marker_color='gold'),
+            go.Bar(name='Silver', x=medal_counts.index, y=medal_counts['Silver'], marker_color='silver'),
+            go.Bar(name='Bronze', x=medal_counts.index, y=medal_counts['Bronze'], marker_color='brown')
         ]
     )
     
