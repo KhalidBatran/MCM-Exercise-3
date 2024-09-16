@@ -15,7 +15,8 @@ app.layout = html.Div([
     dcc.Dropdown(
         id='dropdown-country',
         options=[{'label': i, 'value': i} for i in df['Country Code'].unique()],
-        value='USA',  # Default value
+        value=df['Country Code'].unique(),  # Default to all countries
+        multi=True,  # Allow multiple selections
         clearable=False
     ),
     dcc.Graph(id="medals-count")
@@ -25,12 +26,30 @@ app.layout = html.Div([
     Output('medals-count', 'figure'),
     Input('dropdown-country', 'value')
 )
-def update_graph(selected_country):
-    filtered_df = df[df['Country Code'] == selected_country]
-    medal_counts = filtered_df['Medal Type'].value_counts().reset_index()
-    medal_counts.columns = ['Medal Type', 'Count']
-    fig = px.bar(medal_counts, x='Medal Type', y='Count', color='Medal Type',
-                 title=f"Medals Distribution for {selected_country}")
+def update_graph(selected_countries):
+    if not selected_countries:
+        # If no countries are selected, display data for all countries
+        filtered_df = df
+    else:
+        # Filter the dataframe for selected countries
+        filtered_df = df[df['Country Code'].isin(selected_countries)]
+
+    # Count the medals by type and prepare data for plotting
+    medal_counts = filtered_df.groupby(['Medal Type']).size().reset_index(name='Count')
+    medal_counts = medal_counts.sort_values('Medal Type', ascending=False)  # Sort to maintain color consistency
+
+    # Define custom colors for medal types
+    colors = {'Bronze Medal': 'red', 'Silver Medal': 'blue', 'Gold Medal': 'green'}
+
+    # Create the figure
+    fig = px.bar(
+        medal_counts, 
+        x='Medal Type', 
+        y='Count', 
+        color='Medal Type',
+        color_discrete_map=colors,
+        title='Medals Distribution'
+    )
     return fig
 
 if __name__ == '__main__':
