@@ -1,4 +1,4 @@
-from dash import Dash, html, dcc, callback, Input, Output
+from dash import Dash, html, dcc
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
@@ -9,62 +9,23 @@ server = app.server
 # Load the dataset
 df = pd.read_csv('https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv')
 
+# Aggregate data by country and medal type
+medal_counts = df.groupby('Country Code')['Medal Type'].value_counts().unstack().fillna(0)
+
 app.layout = dbc.Container([
     dbc.Row([
         dbc.Col(html.H1("Medals Count by Country", className='text-center mb-4'), width=12)
-    ]),
-    dbc.Row([
-        dbc.Col([
-            dcc.Dropdown(id='filter-country', 
-                         options=[{'label': country, 'value': country} for country in df['Country Code'].unique()],
-                         value=[df['Country Code'].unique()[0]], 
-                         multi=True, 
-                         placeholder="Select Country(s)")
-        ], width=4),
-        dbc.Col([
-            dcc.Dropdown(id='filter-gender', 
-                         options=[{'label': gender, 'value': gender} for gender in df['Gender'].unique()],
-                         value='All', 
-                         multi=False, 
-                         placeholder="Select Gender")
-        ], width=4),
-        dbc.Col([
-            dcc.Dropdown(id='filter-medal', 
-                         options=[{'label': medal, 'value': medal} for medal in df['Medal Type'].unique()],
-                         value=['Gold', 'Silver', 'Bronze'], 
-                         multi=True, 
-                         placeholder="Select Medal Type(s)")
-        ], width=4)
     ]),
     dbc.Row([
         dbc.Col(dcc.Graph(id='medals-graph'), width=12)
     ])
 ])
 
-@callback(
+@app.callback(
     Output('medals-graph', 'figure'),
-    [Input('filter-country', 'value'),
-     Input('filter-gender', 'value'),
-     Input('filter-medal', 'value')]
+    Input('medals-graph', 'id')  # This input is just to initialize the graph
 )
-def update_graph(selected_countries, selected_gender, selected_medals):
-    filtered_df = df.copy()
-
-    if selected_countries:
-        filtered_df = filtered_df[filtered_df['Country Code'].isin(selected_countries)]
-    if selected_gender != 'All':
-        filtered_df = filtered_df[filtered_df['Gender'] == selected_gender]
-    if selected_medals:
-        filtered_df = filtered_df[filtered_df['Medal Type'].isin(selected_medals)]
-
-    if filtered_df.empty:
-        print("No data to display after filtering.")
-    else:
-        print(f"Displaying data for {len(filtered_df)} entries.")
-
-    # Aggregate data by country and medal type
-    medal_counts = filtered_df.groupby('Country Code')['Medal Type'].value_counts().unstack().fillna(0)
-
+def update_graph(_):
     fig = go.Figure()
     if not medal_counts.empty:
         fig.add_trace(go.Bar(name='Gold', x=medal_counts.index, y=medal_counts.get('Gold', []), marker_color='gold'))
