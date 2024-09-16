@@ -17,7 +17,7 @@ app.layout = dbc.Container([
         dbc.Col([
             dcc.Dropdown(id='filter-country', 
                          options=[{'label': country, 'value': country} for country in df['Country Code'].unique()],
-                         value=[], 
+                         value=[df['Country Code'].unique()[0]], 
                          multi=True, 
                          placeholder="Select Country(s)")
         ], width=4),
@@ -31,7 +31,7 @@ app.layout = dbc.Container([
         dbc.Col([
             dcc.Dropdown(id='filter-medal', 
                          options=[{'label': medal, 'value': medal} for medal in df['Medal Type'].unique()],
-                         value=[], 
+                         value=['Gold', 'Silver', 'Bronze'], 
                          multi=True, 
                          placeholder="Select Medal Type(s)")
         ], width=4)
@@ -57,35 +57,22 @@ def update_graph(selected_countries, selected_gender, selected_medals):
     if selected_medals:
         filtered_df = filtered_df[filtered_df['Medal Type'].isin(selected_medals)]
 
-    # Check if the dataframe is empty
     if filtered_df.empty:
-        print("Filtered dataframe is empty after applying filters.")
+        print("No data to display after filtering.")
     else:
-        print("Filtered dataframe has data.")
+        print(f"Displaying data for {len(filtered_df)} entries.")
 
     # Aggregate data by country and medal type
-    medal_counts = filtered_df.groupby(['Country Code', 'Medal Type']).size().unstack(fill_value=0)
+    medal_counts = filtered_df.groupby('Country Code')['Medal Type'].value_counts().unstack().fillna(0)
 
-    # Debug output
-    print("Medal counts dataframe:")
-    print(medal_counts)
-
-    fig = go.Figure(
-        data=[
-            go.Bar(name='Gold', x=medal_counts.index, y=medal_counts.get('Gold', []), marker_color='gold'),
-            go.Bar(name='Silver', x=medal_counts.index, y=medal_counts.get('Silver', []), marker_color='silver'),
-            go.Bar(name='Bronze', x=medal_counts.index, y=medal_counts.get('Bronze', []), marker_color='brown')
-        ]
-    )
-
-    fig.update_layout(barmode='stack', title="Medals Count by Country")
-
-    if fig.data:
-        print("Graph has data.")
-    else:
-        print("Graph is empty.")
+    fig = go.Figure()
+    if not medal_counts.empty:
+        fig.add_trace(go.Bar(name='Gold', x=medal_counts.index, y=medal_counts.get('Gold', []), marker_color='gold'))
+        fig.add_trace(go.Bar(name='Silver', x=medal_counts.index, y=medal_counts.get('Silver', []), marker_color='silver'))
+        fig.add_trace(go.Bar(name='Bronze', x=medal_counts.index, y=medal_counts.get('Bronze', []), marker_color='brown'))
+        fig.update_layout(barmode='stack', title="Medals Count by Country")
 
     return fig
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run_server(debug=True)
