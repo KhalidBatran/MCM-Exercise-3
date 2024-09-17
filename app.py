@@ -23,6 +23,7 @@ app.layout = html.Div([
         clearable=False,
         multi=True,  # Allow multiple selections
         style={'width': '50%', 'margin': '10px auto'}
+        placeholder="Choose a sport"  # Custom placeholder text
     ),
     dcc.Graph(id='medals-stacked-bar')
 ])
