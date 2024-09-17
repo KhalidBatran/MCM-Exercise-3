@@ -20,10 +20,18 @@ app.layout = html.Div([
     Input('medals-gender', 'id')  # Dummy input for initialization
 )
 def update_graph(_):
-    fig = px.scatter(df, x="Medal Type", y="Medal Date",
-                     color="Medal Type", facet_col="Gender",
-                     hover_data=["Athlete Name", "Country Code", "Sport Discipline"])
-    fig.update_traces(marker=dict(size=10))  # Adjust marker size for visibility
+    # Using 'strip' plot to apply jitter automatically
+    fig = px.strip(df, x="Medal Type", y="Medal Date",
+                   color="Medal Type", facet_col="Gender",
+                   hover_data=["Athlete Name", "Country Code", "Sport Discipline"],
+                   stripmode='overlay')  # Overlay allows for better distribution of points
+    fig.update_traces(marker=dict(size=10), jitter=0.35)  # Adjust jitter and marker size for better visibility
+    fig.update_layout(
+        title_text='Olympic Medals Distribution by Gender',
+        xaxis_title="Medal Type",
+        yaxis_title="Medal Date",
+        legend_title="Medal Type"
+    )
     return fig
 
 if __name__ == '__main__':
