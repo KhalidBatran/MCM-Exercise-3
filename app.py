@@ -4,48 +4,30 @@ import pandas as pd
 import dash_bootstrap_components as dbc
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
-app.title = "Olympic Medals Heatmap"
+app.title = "Olympic Medals Bubble Chart"
 server = app.server
 
 # Load the dataset
 df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv")
 
-# Format 'Medal Date' to show day and month
-df['Formatted Date'] = pd.to_datetime(df['Medal Date']).dt.strftime('%d %b')  # Example: '27 Jul'
-
-dates = df['Formatted Date'].unique()
+# Group data to count medals by type, country, and sport
+medal_counts = df.groupby(['Country Code', 'Sport Discipline', 'Medal Type']).size().reset_index(name='Counts')
 
 app.layout = html.Div([
-    html.H1("Olympic Medals Count by Country and Sport", style={'textAlign': 'center'}),
-    dcc.Dropdown(
-        id='date-dropdown',
-        options=[{'label': 'All', 'value': 'All'}] + [{'label': date, 'value': date} for date in sorted(dates)],
-        value='All',  # Default to 'All'
-        clearable=False,
-        style={'width': '50%', 'margin': '10px auto'}
-    ),
-    dcc.Graph(id='medals-heatmap')
+    html.H1("Olympic Medals Distribution by Country and Sport", style={'textAlign': 'center'}),
+    dcc.Graph(id='medals-bubble-chart')
 ])
 
 @app.callback(
-    Output('medals-heatmap', 'figure'),
-    Input('date-dropdown', 'value')
+    Output('medals-bubble-chart', 'figure'),
+    Input('medals-bubble-chart', 'id')  # Dummy input for initialization
 )
-def update_heatmap(selected_date):
-    # Filter data based on the selected date or show all
-    if selected_date == 'All':
-        filtered_df = df
-    else:
-        filtered_df = df[df['Formatted Date'] == selected_date]
-    
-    # Prepare the data for the heatmap
-    heatmap_data = filtered_df.groupby(['Country Code', 'Sport Discipline']).size().unstack(fill_value=0)
-    
-    # Create the heatmap
-    fig = px.imshow(heatmap_data, labels=dict(x="Sport Discipline", y="Country", color="Medal Count"),
-                    aspect="auto", title=f"Medal Distribution for {selected_date}")
-    fig.update_xaxes(side="bottom")
-    
+def update_bubble_chart(_):
+    fig = px.scatter(medal_counts, x="Sport Discipline", y="Country Code",
+                     size="Counts", color="Medal Type",
+                     hover_name="Country Code", size_max=60,
+                     title="Medal Counts by Country and Sport Discipline")
+    fig.update_layout(xaxis_title="Sport Discipline", yaxis_title="Country")
     return fig
 
 if __name__ == '__main__':
