@@ -11,24 +11,26 @@ server = app.server
 # Load the dataset
 df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv")
 
-# Ensure 'Medal Date' is in datetime format
+# Ensure 'Medal Date' is in datetime format and convert it to 'Day Month' format
 df['Medal Date'] = pd.to_datetime(df['Medal Date'])
+df['Medal Date'] = df['Medal Date'].dt.strftime('%d %B')  # Format as 'Day Month'
 
 # Layout of the app
 app.layout = html.Div([
     html.H1("Comparison of Genders and Medals", style={'textAlign': 'center'}),
     
-    # Dropdown to filter by country
+    # Dropdown to filter by country with multi-select enabled
     dcc.Dropdown(
         id='country-dropdown',
         options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
-        value='All',  # Default to all countries
+        value=['All'],  # Default to all countries
         clearable=False,
+        multi=True,  # Enable multi-select
         style={'width': '50%', 'margin': '10px auto'},
-        placeholder="Choose a country"
+        placeholder="Choose a country or countries"
     ),
     
-    # New figure: Compare between Genders and Medals (Figure 3)
+    # Gender and Medals comparison bar chart
     dcc.Graph(id='gender-medal-bar-chart')
 ])
 
@@ -37,33 +39,34 @@ app.layout = html.Div([
     Output('gender-medal-bar-chart', 'figure'),
     Input('country-dropdown', 'value')
 )
-def update_gender_medal_chart(selected_country):
-    # Filter data by country if necessary
-    filtered_df = df if selected_country == 'All' else df[df['Country Code'] == selected_country]
+def update_gender_medal_chart(selected_countries):
+    # Filter data by selected countries
+    if 'All' in selected_countries or not selected_countries:
+        filtered_df = df
+    else:
+        filtered_df = df[df['Country Code'].isin(selected_countries)]
 
     # Create a grouped bar chart to compare genders and medals
     fig = px.bar(
         filtered_df,
         x='Medal Type',  # X-axis: Medal Type (Gold, Silver, Bronze)
-        y=None,  # The count of medals will be automatically calculated
+        y='Medal Type',  # Using Medal Type as a count of medals
         color='Gender',  # Bars grouped by Gender (Male, Female)
         barmode='group',  # Grouped bar mode to compare Male vs Female
-        title=f"Comparison of Genders and Medals for {selected_country}" if selected_country != 'All' else "Comparison of Genders and Medals",
-        labels={'Medal Type': 'Medal', 'count': 'Number of Medals'},
+        title="Comparison of Genders and Medals",
+        labels={'Medal Type': 'Medal'},
         category_orders={"Medal Type": ["Gold Medal", "Silver Medal", "Bronze Medal"]},  # Consistent order of medals
         color_discrete_map={'M': 'blue', 'F': 'pink'}  # Custom colors for Male and Female
     )
-
-    # Enhanced hover details
+    
+    # Simplify hover details
     fig.update_traces(
         hovertemplate=(
             '<b>Athlete Name:</b> %{customdata[0]}<br>' +
             '<b>Medal Date:</b> %{customdata[1]}<br>' +
-            '<b>Medal Type:</b> %{x}<br>' +  # Medal Type from the x-axis
-            '<b>Gender:</b> %{customdata[2]}<br>' +
-            '<b>Sport Discipline:</b> %{customdata[3]}<br>'
+            '<b>Sport Discipline:</b> %{customdata[2]}<br>'
         ),
-        customdata=filtered_df[['Athlete Name', 'Medal Date', 'Gender', 'Sport Discipline']].values  # Add additional data to hover
+        customdata=filtered_df[['Athlete Name', 'Medal Date', 'Sport Discipline']].values  # Add additional data to hover
     )
 
     return fig
