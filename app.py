@@ -7,10 +7,11 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
 app.title = "Olympic Medals Heatmap"
 server = app.server
 
-# Update with the correct URL or load a local file if the URL is not working
+# Load the dataset
 df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv")
 
-# Extracting unique years for the dropdown
+# Assuming 'Medal Date' contains date information and you want to focus on years
+df['Year'] = pd.to_datetime(df['Medal Date']).dt.year
 years = df['Year'].unique()
 
 app.layout = html.Div([
