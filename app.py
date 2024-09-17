@@ -8,7 +8,7 @@ app.title = "Olympic Medals Heatmap"
 server = app.server
 
 # Update with the correct URL or load a local file if the URL is not working
-df = pd.read_csv("https://your-correct-url.com/Olympics_2024.csv")
+df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv")
 
 # Extracting unique years for the dropdown
 years = df['Year'].unique()
