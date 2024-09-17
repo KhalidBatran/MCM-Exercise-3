@@ -35,9 +35,9 @@ def update_graph(selected_countries):
     medal_counts = filtered_df.groupby(['Country Code', 'Medal Type']).size().reset_index(name='Count')
     fig = px.bar(medal_counts, x='Country Code', y='Count', color='Medal Type',
                  title='Medals Distribution', barmode='group',
-                 color_discrete_map={'Gold Medal': 'green', 'Silver Medal': 'blue', 'Bronze Medal': 'red'})
+                 color_discrete_map={'Gold Medal': 'red', 'Silver Medal': 'blue', 'Bronze Medal': 'green'})
     fig.update_layout(legend_title_text='Medal Type',
-                      legend=dict(traceorder='reversed', title_font_family='Arial'))
+                      legend=dict(title_font_family='Arial'))
     return fig
 
 if __name__ == '__main__':
