@@ -17,6 +17,10 @@ df['Medal Date'] = pd.to_datetime(df['Medal Date'])
 # Extract day and month from 'Medal Date' and create a new column for display
 df['Day Month'] = df['Medal Date'].dt.strftime('%d %b')  # Format as 'Day Month'
 
+# Generate marks for the slider with 'All' as the first option
+slider_marks = {i: {'label': date.strftime('%b %d')} for i, date in enumerate(sorted(df['Medal Date'].dt.date.unique()))}
+slider_marks[-1] = {'label': 'All'}  # Add 'All' at the end
+
 # Layout of the app
 app.layout = html.Div([
     html.H1("Olympic Athletes' Medal Progression by Date", style={'textAlign': 'center'}),
@@ -37,10 +41,10 @@ app.layout = html.Div([
     # Slider to filter by date (placed under the figure)
     dcc.Slider(
         id='date-slider',
-        min=0,
-        max=len(df['Medal Date'].dt.date.unique()),
-        value='All',  # Default to show all dates
-        marks={i: {'label': date.strftime('%b %d')} for i, date in enumerate(sorted(df['Medal Date'].dt.date.unique()))},
+        min=-1,  # Start with 'All'
+        max=len(df['Medal Date'].dt.date.unique()) - 1,
+        value=-1,  # Default to 'All'
+        marks=slider_marks,  # Marks include 'All' and all dates
         step=None
     )
 ])
@@ -51,8 +55,8 @@ app.layout = html.Div([
     [Input('date-slider', 'value'), Input('country-dropdown', 'value')]
 )
 def update_line_chart(slider_value, selected_country):
-    # Default behavior: show all dates
-    if slider_value == 'All':
+    # Default behavior: show all dates when "All" is selected
+    if slider_value == -1:
         filtered_df = df if selected_country == 'All' else df[df['Country Code'] == selected_country]
         
         # Normal line chart, X is Medal Date and Y is Index
