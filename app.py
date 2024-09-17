@@ -4,13 +4,11 @@ import pandas as pd
 import dash_bootstrap_components as dbc
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
-app.title = "Olympic Medals Stacked Bar Chart"
+app.title = "Olympics 2024"
 server = app.server
 
-# Load the dataset
 df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv")
 
-# Unique sports for dropdown including an option for 'All'
 sports = df['Sport Discipline'].unique()
 sports_options = [{'label': 'All', 'value': 'All'}] + [{'label': sport, 'value': sport} for sport in sports]
 
@@ -19,11 +17,11 @@ app.layout = html.Div([
     dcc.Dropdown(
         id='sport-dropdown',
         options=sports_options,
-        value=['All'],  # Default to 'All'
+        value=['All'],
         clearable=False,
-        multi=True,  # Allow multiple selections
-        style={'width': '50%', 'margin': '10px auto'},  # <-- Add comma here
-        placeholder="Choose a sport"  # Custom placeholder text
+        multi=True,
+        style={'width': '50%', 'margin': '10px auto'},
+        placeholder="Choose a sport"
     ),
     dcc.Graph(id='medals-stacked-bar')
 ])
@@ -38,11 +36,9 @@ def update_stacked_bar(selected_sports):
     else:
         filtered_df = df[df['Sport Discipline'].isin(selected_sports)]
     
-    # Prepare data for the stacked bar chart
     bar_data = filtered_df.groupby(['Country Code', 'Medal Type']).size().reset_index(name='Counts')
     bar_data = bar_data.pivot(index='Country Code', columns='Medal Type', values='Counts').fillna(0)
     
-    # Create the stacked bar chart
     fig = px.bar(bar_data, x=bar_data.index, y=['Gold Medal', 'Silver Medal', 'Bronze Medal'],
                  title="Medal Counts by Country for Selected Sports",
                  labels={'value': 'Number of Medals', 'Country Code': 'Country'},
