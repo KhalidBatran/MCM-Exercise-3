@@ -1,4 +1,4 @@
-from dash import Dash, html, dcc
+from dash import Dash, html, dcc, Output, Input
 import pandas as pd
 import plotly.express as px
 import dash_bootstrap_components as dbc
