@@ -17,10 +17,6 @@ df['Medal Date'] = pd.to_datetime(df['Medal Date'])
 # Extract day and month from 'Medal Date' and create a new column for display
 df['Day Month'] = df['Medal Date'].dt.strftime('%d %b')  # Format as 'Day Month'
 
-# Generate marks for the slider with 'All' as the first option
-slider_marks = {i: {'label': date.strftime('%b %d')} for i, date in enumerate(sorted(df['Medal Date'].dt.date.unique()))}
-slider_marks[-1] = {'label': 'All'}  # Add 'All' at the end
-
 # Layout of the app
 app.layout = html.Div([
     html.H1("Olympic Athletes' Medal Progression by Date", style={'textAlign': 'center'}),
@@ -35,7 +31,7 @@ app.layout = html.Div([
         placeholder="Choose a country"
     ),
     
-    # Line chart figure
+    # Line chart figure (Figure 1)
     dcc.Graph(id='medals-line-chart'),
     
     # Slider to filter by date (placed under the figure)
@@ -44,12 +40,16 @@ app.layout = html.Div([
         min=-1,  # Start with 'All'
         max=len(df['Medal Date'].dt.date.unique()) - 1,
         value=-1,  # Default to 'All'
-        marks=slider_marks,  # Marks include 'All' and all dates
+        marks={i: {'label': date.strftime('%b %d')} for i, date in enumerate(sorted(df['Medal Date'].dt.date.unique()))},
         step=None
-    )
+    ),
+
+    # New figure: Compare between Genders and Medals (Figure 3)
+    html.H2("Comparison of Genders and Medals", style={'textAlign': 'center'}),
+    dcc.Graph(id='gender-medal-bar-chart')
 ])
 
-# Callback to update the line chart based on the slider value and country filter
+# Callback to update the line chart (Figure 1) based on the slider value and country filter
 @app.callback(
     Output('medals-line-chart', 'figure'),
     [Input('date-slider', 'value'), Input('country-dropdown', 'value')]
@@ -96,6 +96,30 @@ def update_line_chart(slider_value, selected_country):
                 'Sport Discipline': True
             }
         )
+    
+    return fig
+
+# Callback to generate the third figure (Gender vs Medals comparison)
+@app.callback(
+    Output('gender-medal-bar-chart', 'figure'),
+    Input('country-dropdown', 'value')
+)
+def update_gender_medal_chart(selected_country):
+    # Filter data by country if necessary
+    filtered_df = df if selected_country == 'All' else df[df['Country Code'] == selected_country]
+
+    # Create a grouped bar chart to compare genders and medals
+    fig = px.bar(
+        filtered_df,
+        x='Medal Type',  # X-axis: Medal Type (Gold, Silver, Bronze)
+        y=None,  # The count of medals will be automatically calculated
+        color='Gender',  # Bars grouped by Gender (Male, Female)
+        barmode='group',  # Grouped bar mode to compare Male vs Female
+        title=f"Comparison of Genders and Medals for {selected_country}" if selected_country != 'All' else "Comparison of Genders and Medals",
+        labels={'Medal Type': 'Medal', 'count': 'Number of Medals'},
+        category_orders={"Medal Type": ["Gold Medal", "Silver Medal", "Bronze Medal"]},  # Consistent order of medals
+        color_discrete_map={'M': 'blue', 'F': 'pink'}  # Custom colors for Male and Female
+    )
     
     return fig
 
