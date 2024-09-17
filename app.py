@@ -15,18 +15,18 @@ app.layout = html.Div([
     dcc.Dropdown(
         id='dropdown-country',
         options=[{'label': 'All', 'value': 'All'}] + [{'label': i, 'value': i} for i in df['Country Code'].unique()],
-        value='All',
-        multi=True,
+        value='All',  # Default to 'All'
+        multi=True,  # Allow multiple selections
         clearable=False,
-        placeholder="Choose a Country"  # Update placeholder text
+        placeholder="Choose a Country"  # Updated placeholder text
     ),
     dcc.Dropdown(
         id='dropdown-sport',
-        options=[{'label': 'All', 'value': 'All'}] + [{'label': s, 'value': s} for s in df['Sport'].dropna().unique()],
-        value='All',
+        options=[{'label': 'All', 'value': 'All'}] + [{'label': s, 'value': s} for s in df['Sport Discipline'].dropna().unique()],
+        value='All',  # Default to 'All'
         multi=False,
         clearable=False,
-        placeholder="Choose a Sport"  # Update placeholder text for sport
+        placeholder="Choose a Sport"  # Updated placeholder text for sport
     ),
     dcc.Graph(id="medals-count")
 ])
@@ -43,7 +43,7 @@ def update_graph(selected_countries, selected_sport):
         filtered_df = df[df['Country Code'].isin(selected_countries)]
     
     if selected_sport != 'All':
-        filtered_df = filtered_df[filtered_df['Sport'] == selected_sport]
+        filtered_df = filtered_df[filtered_df['Sport Discipline'] == selected_sport]
     
     medal_counts = filtered_df.groupby(['Country Code', 'Medal Type']).size().reset_index(name='Count')
     fig = px.bar(medal_counts, x='Country Code', y='Count', color='Medal Type',
