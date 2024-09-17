@@ -13,6 +13,7 @@ df['Medal Date'] = pd.to_datetime(df['Medal Date'])  # Convert dates if they are
 
 # App setup
 app = dash.Dash(__name__)
+server = app.server  # Add this line to define 'server'
 
 # Layout
 app.layout = html.Div([
