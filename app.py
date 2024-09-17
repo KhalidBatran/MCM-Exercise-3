@@ -10,16 +10,17 @@ server = app.server
 # Load the dataset
 df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv")
 
-# Assuming 'Medal Date' contains date information and you want to focus on years
-df['Year'] = pd.to_datetime(df['Medal Date']).dt.year
-years = df['Year'].unique()
+# Format 'Medal Date' to show day and month
+df['Formatted Date'] = pd.to_datetime(df['Medal Date']).dt.strftime('%d %b')  # Example: '27 Jul'
+
+dates = df['Formatted Date'].unique()
 
 app.layout = html.Div([
     html.H1("Olympic Medals Count by Country and Sport", style={'textAlign': 'center'}),
     dcc.Dropdown(
-        id='year-dropdown',
-        options=[{'label': year, 'value': year} for year in sorted(years)],
-        value=years[0],  # Default to the first year available
+        id='date-dropdown',
+        options=[{'label': 'All', 'value': 'All'}] + [{'label': date, 'value': date} for date in sorted(dates)],
+        value='All',  # Default to 'All'
         clearable=False,
         style={'width': '50%', 'margin': '10px auto'}
     ),
@@ -28,18 +29,21 @@ app.layout = html.Div([
 
 @app.callback(
     Output('medals-heatmap', 'figure'),
-    Input('year-dropdown', 'value')
+    Input('date-dropdown', 'value')
 )
-def update_heatmap(selected_year):
-    # Filter data based on the selected year
-    filtered_df = df[df['Year'] == selected_year]
+def update_heatmap(selected_date):
+    # Filter data based on the selected date or show all
+    if selected_date == 'All':
+        filtered_df = df
+    else:
+        filtered_df = df[df['Formatted Date'] == selected_date]
     
     # Prepare the data for the heatmap
     heatmap_data = filtered_df.groupby(['Country Code', 'Sport Discipline']).size().unstack(fill_value=0)
     
     # Create the heatmap
     fig = px.imshow(heatmap_data, labels=dict(x="Sport Discipline", y="Country", color="Medal Count"),
-                    aspect="auto", title=f"Medal Distribution for {selected_year}")
+                    aspect="auto", title=f"Medal Distribution for {selected_date}")
     fig.update_xaxes(side="bottom")
     
     return fig
