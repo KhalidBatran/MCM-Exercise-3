@@ -7,8 +7,8 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
 app.title = "Olympic Medals Heatmap"
 server = app.server
 
-# Load the dataset
-df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/Olympics_2024.csv")
+# Update with the correct URL or load a local file if the URL is not working
+df = pd.read_csv("https://your-correct-url.com/Olympics_2024.csv")
 
 # Extracting unique years for the dropdown
 years = df['Year'].unique()
