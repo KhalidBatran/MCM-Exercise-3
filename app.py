@@ -19,7 +19,7 @@ app.layout = html.Div([
     dcc.Dropdown(
         id='sport-dropdown',
         options=sports_options,
-        value=['All'],  # Default to 'All'
+        value='All',  # Default to 'All'
         clearable=False,
         multi=True,  # Allow multiple selections
         style={'width': '50%', 'margin': '10px auto'}
