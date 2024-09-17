@@ -1,43 +1,47 @@
-import dash
-import dash_bootstrap_components as dbc
-import pandas as pd
+from dash import Dash, dcc, html, Input, Output
 import plotly.express as px
-from dash import dcc, html, Input, Output, callback
+import pandas as pd
+import dash_bootstrap_components as dbc
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
+app.title = "Olympic Medals Heatmap"
+server = app.server
 
 # Load the dataset
-df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv")
+df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/Olympics_2024.csv")
 
-app.layout = dbc.Container([
-    html.H1("Olympic Medals Visualization", className="text-center"),
-    dcc.Tabs(id='tabs', children=[
-        dcc.Tab(label='Scatter Plot', value='scatter'),
-        dcc.Tab(label='Histogram', value='histogram'),
-        dcc.Tab(label='Bar Plot', value='bar')
-    ], active_tab='scatter'),
-    html.Div(id='tab-content')
+# Extracting unique years for the dropdown
+years = df['Year'].unique()
+
+app.layout = html.Div([
+    html.H1("Olympic Medals Count by Country and Sport", style={'textAlign': 'center'}),
+    dcc.Dropdown(
+        id='year-dropdown',
+        options=[{'label': year, 'value': year} for year in sorted(years)],
+        value=years[0],  # Default to the first year available
+        clearable=False,
+        style={'width': '50%', 'margin': '10px auto'}
+    ),
+    dcc.Graph(id='medals-heatmap')
 ])
 
 @app.callback(
-    Output('tab-content', 'children'),
-    Input('tabs', 'active_tab')
+    Output('medals-heatmap', 'figure'),
+    Input('year-dropdown', 'value')
 )
-def render_content(tab):
-    if tab == 'scatter':
-        fig = px.scatter(df, x='Athlete Name', y='Medal Type',
-                         color='Gender', title='Scatter Plot: Medals by Athlete and Gender')
-        return dcc.Graph(figure=fig)
+def update_heatmap(selected_year):
+    # Filter data based on the selected year
+    filtered_df = df[df['Year'] == selected_year]
     
-    elif tab == 'histogram':
-        fig = px.histogram(df, x='Medal Type', color='Country Code',
-                           title='Histogram: Medal Count by Country')
-        return dcc.Graph(figure=fig)
+    # Prepare the data for the heatmap
+    heatmap_data = filtered_df.groupby(['Country Code', 'Sport Discipline']).size().unstack(fill_value=0)
     
-    elif tab == 'bar':
-        fig = px.bar(df, x='Sport Discipline', y='Medal Type', color='Country Code',
-                     title='Bar Plot: Medals by Sport and Country')
-        return dcc.Graph(figure=fig)
+    # Create the heatmap
+    fig = px.imshow(heatmap_data, labels=dict(x="Sport Discipline", y="Country", color="Medal Count"),
+                    aspect="auto", title=f"Medal Distribution for {selected_year}")
+    fig.update_xaxes(side="bottom")
+    
+    return fig
 
 if __name__ == '__main__':
     app.run_server(debug=True)
