@@ -11,22 +11,14 @@ server = app.server
 # Load the dataset
 df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv")
 
-# Ensure 'Medal Date' is in datetime format and convert it to 'Day Month' format
-df['Medal Date'] = pd.to_datetime(df['Medal Date'])
-df['Medal Date'] = df['Medal Date'].dt.strftime('%d %B')  # Format as 'Day Month'
-
-# Ensure that all medal types are properly labeled and included
-df['Medal Type'] = df['Medal Type'].replace({
-    'G': 'Gold Medal',
-    'S': 'Silver Medal',
-    'B': 'Bronze Medal'
-})
+# Convert 'Medal Date' to datetime and format as 'Day Month'
+df['Medal Date'] = pd.to_datetime(df['Medal Date']).dt.strftime('%d %B')
 
 # Layout of the app
 app.layout = html.Div([
     html.H1("Comparison of Genders and Medals", style={'textAlign': 'center'}),
     
-    # Dropdown to filter by country with multi-select enabled
+    # Dropdown to filter by country with multi-select
     dcc.Dropdown(
         id='country-dropdown',
         options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
@@ -37,7 +29,7 @@ app.layout = html.Div([
         placeholder="Choose a country or countries"
     ),
     
-    # Gender and Medals comparison bar chart
+    # New figure: Compare between Genders and Medals
     dcc.Graph(id='gender-medal-bar-chart')
 ])
 
@@ -57,20 +49,24 @@ def update_gender_medal_chart(selected_countries):
     fig = px.bar(
         filtered_df,
         x='Medal Type',  # X-axis: Medal Type (Gold, Silver, Bronze)
-        y='Medal Type',  # The count of medals will be automatically calculated
+        y='Medal Type',  # Count of medals will be automatically calculated
         color='Gender',  # Bars grouped by Gender (Male, Female)
         barmode='group',  # Grouped bar mode to compare Male vs Female
         title="Comparison of Genders and Medals",
-        labels={'Medal Type': 'Medal', 'count': 'Total Medals'},
+        labels={'Medal Type': 'Medal Type', 'count': 'Number of Medals'},  # Correct labels
         category_orders={"Medal Type": ["Gold Medal", "Silver Medal", "Bronze Medal"]},  # Consistent order of medals
         color_discrete_map={'M': 'blue', 'F': 'pink'}  # Custom colors for Male and Female
     )
-    
-    # Update layout to correctly display medal types and address misplaced labels
-    fig.update_layout(
-        yaxis_title='Total Medals',  # Correct y-axis title
-        xaxis_title='Medal Type',  # Correct x-axis title
-        xaxis={'categoryorder': 'total descending'}  # Sort categories by total medals descending
+
+    # Enhanced hover details
+    fig.update_traces(
+        hovertemplate=(
+            '<b>Athlete Name:</b> %{customdata[0]}<br>' +
+            '<b>Medal Date:</b> %{customdata[1]}<br>' +
+            '<b>Country:</b> %{customdata[2]}<br>' +
+            '<b>Sport Discipline:</b> %{customdata[3]}<br>'
+        ),
+        customdata=filtered_df[['Athlete Name', 'Medal Date', 'Country Code', 'Sport Discipline']].values
     )
 
     return fig
