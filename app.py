@@ -9,9 +9,16 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
 server = app.server
 
 # Load the cleaned dataset
-df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/Olympics%202024.csv")
-df['Medal Date'] = pd.to_datetime(df['Medal Date'])
-df['Day Month'] = df['Medal Date'].dt.strftime('%d %b')  # Format for display
+df = pd.read_csv("https://sandbox:/mnt/data/Olympics_2024_New_Cleaned.csv")
+
+# Ensure 'Medal Date' is parsed correctly, handling the specific format
+df['Medal Date'] = pd.to_datetime(df['Medal Date'], errors='coerce', format='%d-%b')
+
+# Drop rows where 'Medal Date' couldn't be converted
+df = df.dropna(subset=['Medal Date'])
+
+# Create a 'Day Month' column for display purposes
+df['Day Month'] = df['Medal Date'].dt.strftime('%d %b')
 
 # Sidebar layout
 SIDEBAR_STYLE = {
