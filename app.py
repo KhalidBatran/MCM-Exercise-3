@@ -1,72 +1,178 @@
-import plotly.express as px
-from dash import Dash, dcc, html, Input, Output
-import pandas as pd
+import dash
 import dash_bootstrap_components as dbc
+from dash import Input, Output, dcc, html
+import pandas as pd
+import plotly.express as px
 
-# Initialize the app
-app = Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
-app.title = "Olympics 2024"
+# Initialize the Dash app
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
 server = app.server
 
-# Load the dataset
-df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/cleaned_medals.csv")
-
-# Ensure 'Medal Date' is in datetime format
+# Load the cleaned dataset
+df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/Olympics%202024.csv")
 df['Medal Date'] = pd.to_datetime(df['Medal Date'])
+df['Day Month'] = df['Medal Date'].dt.strftime('%d %b')  # Format for display
 
-# Layout of the app
-app.layout = html.Div([
-    html.H1("Comparison of Genders and Medals", style={'textAlign': 'center'}),
-    
-    # Dropdown to filter by country
-    dcc.Dropdown(
-        id='country-dropdown',
-        options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
-        value='All',  # Default to all countries
-        clearable=False,
-        style={'width': '50%', 'margin': '10px auto'},
-        placeholder="Choose a country"
-    ),
-    
-    # New figure: Compare between Genders and Medals (Figure 3)
-    dcc.Graph(id='gender-medal-bar-chart')
-])
+# Sidebar layout
+SIDEBAR_STYLE = {
+    "position": "fixed",
+    "top": 0,
+    "left": 0,
+    "bottom": 0,
+    "width": "16rem",
+    "padding": "2rem 1rem",
+    "background-color": "#f8f9fa",
+}
 
-# Callback to generate the third figure (Gender vs Medals comparison)
-@app.callback(
-    Output('gender-medal-bar-chart', 'figure'),
-    Input('country-dropdown', 'value')
-)
-def update_gender_medal_chart(selected_country):
-    # Filter data by country if necessary
-    filtered_df = df if selected_country == 'All' else df[df['Country Code'] == selected_country]
+CONTENT_STYLE = {
+    "margin-left": "18rem",
+    "margin-right": "2rem",
+    "padding": "2rem 1rem",
+}
 
-    # Create a grouped bar chart to compare genders and medals
-    fig = px.bar(
-        filtered_df,
-        x='Medal Type',  # X-axis: Medal Type (Gold, Silver, Bronze)
-        y=None,  # The count of medals will be automatically calculated
-        color='Gender',  # Bars grouped by Gender (Male, Female)
-        barmode='group',  # Grouped bar mode to compare Male vs Female
-        title=f"Comparison of Genders and Medals for {selected_country}" if selected_country != 'All' else "Comparison of Genders and Medals",
-        labels={'Medal Type': 'Medal', 'count': 'Number of Medals'},
-        category_orders={"Medal Type": ["Gold Medal", "Silver Medal", "Bronze Medal"]},  # Consistent order of medals
-        color_discrete_map={'M': 'blue', 'F': 'pink'}  # Custom colors for Male and Female
-    )
-
-    # Enhanced hover details
-    fig.update_traces(
-        hovertemplate=(
-            '<b>Athlete Name:</b> %{customdata[0]}<br>' +
-            '<b>Medal Date:</b> %{customdata[1]}<br>' +
-            '<b>Medal Type:</b> %{x}<br>' +  # Medal Type from the x-axis
-            '<b>Gender:</b> %{customdata[2]}<br>' +
-            '<b>Sport Discipline:</b> %{customdata[3]}<br>'
+sidebar = html.Div(
+    [
+        html.H2("Sidebar", className="display-4"),
+        html.Hr(),
+        dbc.Nav(
+            [
+                dbc.NavLink("Home", href="/", active="exact"),
+                dbc.NavLink("Figure 1", href="/fig1", active="exact"),
+                dbc.NavLink("Figure 2", href="/fig2", active="exact"),
+                dbc.NavLink("Figure 3", href="/fig3", active="exact"),
+            ],
+            vertical=True,
+            pills=True,
         ),
-        customdata=filtered_df[['Athlete Name', 'Medal Date', 'Gender', 'Sport Discipline']].values  # Add additional data to hover
+    ],
+    style=SIDEBAR_STYLE,
+)
+
+content = html.Div(id="page-content", style=CONTENT_STYLE)
+
+# App layout
+app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
+
+# Callback for rendering page content based on the URL
+@app.callback(Output("page-content", "children"), [Input("url", "pathname")])
+def render_page_content(pathname):
+    if pathname == "/":
+        return html.H1("Welcome to the Olympic Medals Visualization Home Page!", style={'textAlign': 'center'})
+    elif pathname == "/fig1":
+        return fig1_layout()
+    elif pathname == "/fig2":
+        return fig2_layout()
+    elif pathname == "/fig3":
+        return fig3_layout()
+    return html.Div(
+        [
+            html.H1("404: Not found", className="text-danger"),
+            html.Hr(),
+            html.P(f"The pathname {pathname} was not recognised..."),
+        ],
+        className="p-3 bg-light rounded-3",
     )
 
+# Figure 1 layout and callback
+def fig1_layout():
+    return html.Div([
+        html.H1('Olympic Medals Count by Country', style={'textAlign': 'center'}),
+        dcc.Dropdown(
+            id='dropdown-country',
+            options=[{'label': 'All', 'value': 'All'}] + [{'label': i, 'value': i} for i in df['Country Code'].unique()],
+            value='All',
+            multi=True,
+            clearable=False,
+            placeholder="Choose a Country"
+        ),
+        dcc.Dropdown(
+            id='dropdown-sport',
+            options=[{'label': 'All', 'value': 'All'}] + [{'label': s, 'value': s} for s in df['Sport Discipline'].dropna().unique()],
+            value='All',
+            multi=False,
+            clearable=False,
+            placeholder="Choose a Sport"
+        ),
+        dcc.Graph(id="medals-count")
+    ])
+
+@app.callback(
+    Output('medals-count', 'figure'),
+    [Input('dropdown-country', 'value'), Input('dropdown-sport', 'value')]
+)
+def update_fig1(selected_countries, selected_sport):
+    filtered_df = df if 'All' in selected_countries or not selected_countries else df[df['Country Code'].isin(selected_countries)]
+    if selected_sport != 'All':
+        filtered_df = filtered_df[filtered_df['Sport Discipline'] == selected_sport]
+    medal_counts = filtered_df.groupby(['Country Code', 'Medal Type']).size().reset_index(name='Count')
+    fig = px.bar(medal_counts, x='Country Code', y='Count', color='Medal Type', barmode='group',
+                 color_discrete_map={'Gold Medal': 'red', 'Silver Medal': 'blue', 'Bronze Medal': 'green'})
     return fig
 
-if __name__ == '__main__':
+# Figure 2 layout and callback
+def fig2_layout():
+    slider_marks = {i: {'label': date.strftime('%b %d')} for i, date in enumerate(sorted(df['Medal Date'].dt.date.unique()))}
+    slider_marks[-1] = {'label': 'All'}
+    return html.Div([
+        html.H1("Olympic Athletes' Medal Progression by Date", style={'textAlign': 'center'}),
+        dcc.Dropdown(
+            id='country-dropdown-fig2',
+            options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
+            value='All',
+            clearable=False,
+            style={'width': '50%', 'margin': '10px auto'},
+            placeholder="Choose a country"
+        ),
+        dcc.Graph(id='medals-line-chart'),
+        dcc.Slider(
+            id='date-slider',
+            min=-1,
+            max=len(df['Medal Date'].dt.date.unique()) - 1,
+            value=-1,
+            marks=slider_marks,
+            step=None
+        )
+    ])
+
+@app.callback(
+    Output('medals-line-chart', 'figure'),
+    [Input('date-slider', 'value'), Input('country-dropdown-fig2', 'value')]
+)
+def update_fig2(slider_value, selected_country):
+    filtered_df = df if slider_value == -1 else df[df['Medal Date'].dt.date == df['Medal Date'].dt.date.unique()[slider_value]]
+    if selected_country != 'All':
+        filtered_df = filtered_df[filtered_df['Country Code'] == selected_country]
+    if slider_value == -1:
+        fig = px.line(filtered_df, x='Day Month', y=filtered_df.index, color='Athlete Name', markers=True)
+    else:
+        fig = px.scatter(filtered_df, x='Sport Discipline', y='Medal Type', color='Athlete Name')
+    return fig
+
+# Figure 3 layout and callback
+def fig3_layout():
+    return html.Div([
+        html.H1("Comparison of Genders and Medals", style={'textAlign': 'center'}),
+        dcc.Dropdown(
+            id='country-dropdown-fig3',
+            options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
+            value='All',
+            clearable=False,
+            style={'width': '50%', 'margin': '10px auto'},
+            placeholder="Choose a country"
+        ),
+        dcc.Graph(id='gender-medal-bar-chart')
+    ])
+
+@app.callback(
+    Output('gender-medal-bar-chart', 'figure'),
+    [Input('country-dropdown-fig3', 'value')]
+)
+def update_fig3(selected_country):
+    filtered_df = df if selected_country == 'All' else df[df['Country Code'] == selected_country]
+    fig = px.bar(filtered_df, x='Medal Type', color='Gender', barmode='group',
+                 color_discrete_map={'M': 'blue', 'F': 'pink'})
+    return fig
+
+# Run the app
+if __name__ == "__main__":
     app.run_server(debug=True)
