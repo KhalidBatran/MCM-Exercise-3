@@ -13,14 +13,10 @@ df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/
 
 # Ensure 'Medal Date' is parsed correctly, handling the specific format
 df['Medal Date'] = pd.to_datetime(df['Medal Date'], errors='coerce', format='%d-%b')
-
-# Drop rows where 'Medal Date' couldn't be converted
 df = df.dropna(subset=['Medal Date'])
-
-# Create a 'Day Month' column for display purposes
 df['Day Month'] = df['Medal Date'].dt.strftime('%d %b')
 
-# Sidebar layout
+# Styling for the sidebar and content
 SIDEBAR_STYLE = {
     "position": "fixed",
     "top": 0,
@@ -29,17 +25,27 @@ SIDEBAR_STYLE = {
     "width": "16rem",
     "padding": "2rem 1rem",
     "background-color": "#f8f9fa",
+    "transition": "0.3s"
 }
 
 CONTENT_STYLE = {
     "margin-left": "18rem",
     "margin-right": "2rem",
     "padding": "2rem 1rem",
+    "transition": "0.3s",
 }
 
+CONTENT_STYLE_COLLAPSED = {
+    "margin-left": "2rem",
+    "margin-right": "2rem",
+    "padding": "2rem 1rem",
+    "transition": "0.3s",
+}
+
+# Collapsible Sidebar
 sidebar = html.Div(
     [
-        html.H2("Sidebar", className="display-4"),
+        html.H2("Menu", className="display-4"),
         html.Hr(),
         dbc.Nav(
             [
@@ -52,19 +58,55 @@ sidebar = html.Div(
             pills=True,
         ),
     ],
+    id="sidebar",
     style=SIDEBAR_STYLE,
 )
 
+# Button to toggle the sidebar
+sidebar_toggle_button = dbc.Button("Toggle Sidebar", id="toggle-button", n_clicks=0, style={"margin": "10px"})
+
+# Content layout
 content = html.Div(id="page-content", style=CONTENT_STYLE)
 
 # App layout
-app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
+app.layout = html.Div([
+    dcc.Location(id="url"),
+    sidebar_toggle_button,
+    sidebar,
+    content
+])
 
-# Callback for rendering page content based on the URL
-@app.callback(Output("page-content", "children"), [Input("url", "pathname")])
+# Home Page Layout
+def home_layout():
+    return html.Div(
+        style={"textAlign": "center"},
+        children=[
+            html.H1("The Olympic Medals Visualization", style={'font-weight': 'bold', 'margin-bottom': '20px'}),
+            html.P("Welcome to the Olympic Medals Dashboard! Here, you can explore data from the Olympic Games for this year. "
+                   "This dashboard provides insights into Olympic athletes and their achievements."),
+            html.Br(),
+            html.H2("Figure 1: Olympic Medals Count by Country"),
+            html.P("This visualization allows you to explore the total count of Olympic medals won by different countries, "
+                   "broken down by medal type (Gold, Silver, Bronze). You can filter the data by country and sport."),
+            html.Br(),
+            html.H2("Figure 2: Olympic Athletes' Medal Progression by Date"),
+            html.P("This chart shows how athletes' medal counts progress over the dates of the competition. You can filter the data "
+                   "by country and specific dates."),
+            html.Br(),
+            html.H2("Figure 3: Comparison of Genders and Medals"),
+            html.P("This bar chart compares the medals won by athletes of different genders, broken down by medal type. "
+                   "You can filter the data by country."),
+        ]
+    )
+
+# Callback to render the appropriate page content based on the URL
+@app.callback(
+    Output("page-content", "children"),
+    Input("url", "pathname")
+)
 def render_page_content(pathname):
     if pathname == "/":
-        return html.H1("Welcome to the Olympic Medals Visualization Home Page!", style={'textAlign': 'center'})
+        return home_layout()
     elif pathname == "/fig1":
         return fig1_layout()
     elif pathname == "/fig2":
@@ -79,6 +121,16 @@ def render_page_content(pathname):
         ],
         className="p-3 bg-light rounded-3",
     )
+
+# Callback for the sidebar toggle button
+@app.callback(
+    [Output("sidebar", "style"), Output("page-content", "style")],
+    Input("toggle-button", "n_clicks")
+)
+def toggle_sidebar(n_clicks):
+    if n_clicks % 2 == 1:
+        return {"display": "none"}, CONTENT_STYLE_COLLAPSED
+    return SIDEBAR_STYLE, CONTENT_STYLE
 
 # Figure 1 layout and callback
 def fig1_layout():
