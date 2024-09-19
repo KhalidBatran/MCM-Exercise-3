@@ -226,45 +226,42 @@ def update_fig2(slider_value, selected_country):
 # Figure 3 layout and callback
 def fig3_layout():
     return html.Div([
-        html.H1("Total Medals by Gender", style={'textAlign': 'center'}),
+        html.H1("Comparison of Genders and Medals", style={'textAlign': 'center'}),
         dcc.Dropdown(
             id='country-dropdown-fig3',
-            options=[{'label': i, 'value': i} for i in df['Country Code'].unique()],
-            value=['All'],  # Default to 'All' if it makes sense, or adjust as needed
+            options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
+            value='All',  # Set 'All' as the default value
             multi=True,
+            clearable=False,
             style={'width': '50%', 'margin': '10px auto'},
             placeholder="Select countries"
         ),
-        dcc.Graph(id='gender-medal-facet-bar-chart')
+        dcc.Graph(id='gender-medal-bar-chart')
     ])
 
 @app.callback(
-    Output('gender-medal-facet-bar-chart', 'figure'),
+    Output('gender-medal-bar-chart', 'figure'),
     [Input('country-dropdown-fig3', 'value')]
 )
 def update_fig3(selected_countries):
-    # Filter the dataframe based on selected countries
-    if 'All' in selected_countries or not selected_countries:
-        filtered_df = df
+    # Handle the 'All' selection
+    if 'All' in selected_countries:
+        filtered_df = df  # If 'All' is selected, use the entire dataframe
     else:
         filtered_df = df[df['Country Code'].isin(selected_countries)]
-    
-    # Aggregate data by gender and medal type
-    medal_counts = filtered_df.groupby(['Gender', 'Medal Type']).size().reset_index(name='Count')
-    
-    # Create the bar chart faceted by gender
+
     fig = px.bar(
-        medal_counts,
+        filtered_df,
         x='Medal Type',
-        y='Count',
+        y='Medal Count',
         color='Gender',
         barmode='group',
         facet_col='Gender',
+        color_discrete_map={'M': 'blue', 'F': 'pink'},
         category_orders={
             "Medal Type": ["Bronze Medal", "Silver Medal", "Gold Medal"], 
             "Gender": ["M", "F"]
-        },
-        color_discrete_map={"M": "blue", "F": "pink"}
+        }
     )
     return fig
     
