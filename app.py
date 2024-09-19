@@ -183,6 +183,7 @@ def fig2_layout():
             id='country-dropdown-fig2',
             options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
             value='All',
+            multi=True,
             clearable=False,
             style={'width': '50%', 'margin': '10px auto'},
             placeholder="Choose a country"
@@ -193,7 +194,6 @@ def fig2_layout():
             id='athlete-dropdown-fig2',
             options=[{'label': 'All', 'value': 'All'}] + [{'label': name, 'value': name} for name in df['Athlete Name'].unique()],
             value='All',  # Default to "All"
-            multi=True,  # Enable multi-selection for athlete names
             placeholder="Choose Athlete(s)",
             style={'width': '50%', 'margin': '10px auto'}
         ),
