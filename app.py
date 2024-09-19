@@ -167,6 +167,8 @@ def update_fig1(selected_countries, selected_sport):
     # Color mapping for Gold, Silver, and Bronze
     fig = px.bar(medal_counts, x='Country Code', y='Count', color='Medal Type', barmode='group',
                  color_discrete_map={'Gold Medal': '#FFD700', 'Silver Medal': '#C0C0C0', 'Bronze Medal': '#CD7F32'})
+    # Remove "medal type" from hover information
+    fig.update_traces(hovertemplate='<b>Country Code:</b> %{x}<br><b>Count:</b> %{y}<extra></extra>')
     return fig
 
 # Figure 2 layout and callback
@@ -202,17 +204,16 @@ def update_fig2(slider_value, selected_country):
     filtered_df = df if slider_value == -1 else df[df['Medal Date'].dt.date == df['Medal Date'].dt.date.unique()[slider_value]]
     if selected_country != 'All':
         filtered_df = filtered_df[filtered_df['Country Code'] == selected_country]
-    if slider_value == -1:
-        fig = px.line(filtered_df, x='Day Month', y=filtered_df.index, color='Athlete Name', markers=True)
-    else:
-        fig = px.scatter(filtered_df, x='Sport Discipline', y='Medal Type', color='Athlete Name')
+    # Add medal type, country code, and gender to hover information
+    fig = px.line(filtered_df, x='Day Month', y=filtered_df.index, color='Athlete Name', markers=True,
+                  hover_data={'Medal Type': True, 'Country Code': True, 'Gender': True})
     return fig
 
 # Figure 3 layout and callback
 def fig3_layout():
     return html.Div([
         html.H1("Comparison of Genders and Medals", style={'textAlign': 'center'}),
-        dcc.Dropdown(
+            dcc.Dropdown(
             id='country-dropdown-fig3',
             options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
             value='All',
