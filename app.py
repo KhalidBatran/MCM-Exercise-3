@@ -188,11 +188,11 @@ def fig2_layout():
             placeholder="Choose a country"
         ),
         
-        # New Athlete Names filter dropdown
+        # Athlete Names filter dropdown with "All" as default
         dcc.Dropdown(
             id='athlete-dropdown-fig2',
-            options=[{'label': name, 'value': name} for name in df['Athlete Name'].unique()],
-            value=[],
+            options=[{'label': 'All', 'value': 'All'}] + [{'label': name, 'value': name} for name in df['Athlete Name'].unique()],
+            value='All',  # Default to "All"
             multi=True,  # Enable multi-selection for athlete names
             placeholder="Choose Athlete(s)",
             style={'width': '50%', 'margin': '10px auto'}
@@ -224,17 +224,14 @@ def update_fig2(slider_value, selected_country, selected_athletes):
     if selected_country != 'All':
         filtered_df = filtered_df[filtered_df['Country Code'] == selected_country]
     
-    if selected_athletes:
+    if 'All' not in selected_athletes:  # Only filter by selected athletes if "All" is not selected
         filtered_df = filtered_df[filtered_df['Athlete Name'].isin(selected_athletes)]
     
-    # Create a new column 'Rank' to use as the y-axis instead of the index
-    filtered_df['Rank'] = range(1, len(filtered_df) + 1)
-    
-    # Add medal type, country code, gender, and sport discipline to hover information, but remove index
+    # Use the index as the y-axis, but remove it from the hover data
     fig = px.line(
         filtered_df,
         x='Day Month',
-        y='Rank',  # Use the new 'Rank' column as the y-axis
+        y=filtered_df.index,  # Restore the index as the y-axis
         color='Athlete Name',
         markers=True,
         hover_data={
@@ -242,6 +239,8 @@ def update_fig2(slider_value, selected_country, selected_athletes):
             'Country Code': True, 
             'Gender': True, 
             'Sport Discipline': True,
+            'Day Month': False,  # Exclude 'Day Month' from hover
+            filtered_df.index.name: False  # Exclude the index from the hover
         }
     )
     return fig
