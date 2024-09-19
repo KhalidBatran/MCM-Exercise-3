@@ -253,13 +253,13 @@ def update_fig3(selected_countries):
     # Group data by Medal Type and Gender and count entries
     medal_counts = filtered_df.groupby(['Medal Type', 'Gender']).size().reset_index(name='Count')
 
-    # Create a bar chart
+    # Create a stacked bar chart
     fig = px.bar(
         medal_counts,
         x='Medal Type',
         y='Count',
         color='Gender',
-        barmode='group',
+        barmode='stack',
         color_discrete_map={'M': 'blue', 'F': 'pink'},
         labels={"Medal Type": "Type of Medal", "Count": "Number of Medals"},
         title="Medal Distribution by Gender"
