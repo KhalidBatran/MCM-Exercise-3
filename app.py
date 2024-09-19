@@ -4,19 +4,19 @@ from dash import Input, Output, dcc, html
 import pandas as pd
 import plotly.express as px
 
-# Initialize the Dash app with external stylesheets for better styling.
+# Initialize the Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
 server = app.server
 
-# Load the cleaned dataset from a public URL.
+# Load the cleaned dataset
 df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/Olympics%202024.csv")
 
-# Parse 'Medal Date' to datetime and drop any rows with errors in date parsing.
+# Ensure 'Medal Date' is parsed correctly, handling the specific format
 df['Medal Date'] = pd.to_datetime(df['Medal Date'], errors='coerce', format='%d-%b')
 df = df.dropna(subset=['Medal Date'])
 df['Day Month'] = df['Medal Date'].dt.strftime('%d %b')
 
-# Define sidebar style for navigation.
+# Sidebar layout
 SIDEBAR_STYLE = {
     "position": "fixed",
     "top": 0,
@@ -35,6 +35,14 @@ CONTENT_STYLE = {
     "transition": "0.3s",
 }
 
+CONTENT_STYLE_COLLAPSED = {
+    "margin-left": "2rem",
+    "margin-right": "2rem",
+    "padding": "2rem 1rem",
+    "transition": "0.3s",
+}
+
+# Collapsible Sidebar
 sidebar = html.Div(
     [
         html.H2("Menu", className="display-4"),
@@ -50,33 +58,48 @@ sidebar = html.Div(
             pills=True,
         ),
     ],
+    id="sidebar",
     style=SIDEBAR_STYLE,
 )
 
-# Button to toggle the sidebar for better responsiveness.
+# Button to toggle the sidebar
 sidebar_toggle_button = dbc.Button("Toggle Sidebar", id="toggle-button", n_clicks=0, style={"margin": "10px"})
 
-# Main layout of the app including sidebar and content layout.
+# Content layout
+content = html.Div(id="page-content", style=CONTENT_STYLE)
+
+# App layout
 app.layout = html.Div([
     dcc.Location(id="url"),
     sidebar_toggle_button,
     sidebar,
-    html.Div(id="page-content", style=CONTENT_STYLE)
+    content
 ])
 
-# Home page layout.
+# Home Page Layout
 def home_layout():
     return html.Div(
         style={"textAlign": "center"},
         children=[
             html.H1("The Olympic Medals Visualization", style={'font-weight': 'bold', 'margin-bottom': '20px'}),
-            html.P("Welcome to the Olympic Medals Dashboard! Explore data from the Olympic Games."),
+            html.P("Welcome to the Olympic Medals Dashboard! Here, you can explore data from the Olympic Games for this year. "
+                   "This dashboard provides insights into Olympic athletes and their achievements."),
             html.Br(),
-            html.H2("Navigate through the dashboard using the sidebar to see detailed visualizations.")
+            html.H2("Olympics Bar Chart"),
+            html.P("This visualization allows you to explore the total count of Olympic medals won by different countries, "
+                   "broken down by medal type (Gold, Silver, Bronze). You can filter the data by country and sport."),
+            html.Br(),
+            html.H2("Olympics Line Progression"),
+            html.P("This chart shows how athletes' medal counts progress over the dates of the competition. You can filter the data "
+                   "by country and specific dates."),
+            html.Br(),
+            html.H2("Olympics Gender Comparison"),
+            html.P("This bar chart compares the medals won by athletes of different genders, broken down by medal type. "
+                   "You can filter the data by country."),
         ]
     )
 
-# Callback to dynamically load the correct page based on URL.
+# Callback to render the appropriate page content based on the URL
 @app.callback(
     Output("page-content", "children"),
     Input("url", "pathname")
@@ -90,7 +113,7 @@ def render_page_content(pathname):
         return fig2_layout()
     elif pathname == "/fig3":
         return fig3_layout()
-    return dbc.Jumbotron(
+    return html.Div(
         [
             html.H1("404: Not found", className="text-danger"),
             html.Hr(),
@@ -99,16 +122,37 @@ def render_page_content(pathname):
         className="p-3 bg-light rounded-3",
     )
 
+# Callback for the sidebar toggle button
+@app.callback(
+    [Output("sidebar", "style"), Output("page-content", "style")],
+    Input("toggle-button", "n_clicks")
+)
+def toggle_sidebar(n_clicks):
+    if n_clicks % 2 == 1:
+        return {"display": "none"}, CONTENT_STYLE_COLLAPSED
+    return SIDEBAR_STYLE, CONTENT_STYLE
+
 # Figure 1 layout and callback
 def fig1_layout():
-    medal_data = df.groupby(['Country Code', 'Medal Type']).size().reset_index(name='Count')
-    fig = px.bar(medal_data, x='Country Code', y='Count', color='Medal Type',
-                 color_discrete_map={'Gold': '#FFD700', 'Silver': '#C0C0C0', 'Bronze': '#CD7F32'},
-                 labels={'Count': 'Medals Count'},
-                 title='Medals Count by Country and Type')
     return html.Div([
-        html.H1('Olympics Medals by Country', style={'textAlign': 'center'}),
-        dcc.Graph(figure=fig)
+        html.H1('Olympic Medals Count by Country', style={'textAlign': 'center'}),
+        dcc.Dropdown(
+            id='dropdown-country',
+            options=[{'label': 'All', 'value': 'All'}] + [{'label': i, 'value': i} for i in df['Country Code'].unique()],
+            value='All',
+            multi=True,
+            clearable=False,
+            placeholder="Choose a Country"
+        ),
+        dcc.Dropdown(
+            id='dropdown-sport',
+            options=[{'label': 'All', 'value': 'All'}] + [{'label': s, 'value': s} for s in df['Sport Discipline'].dropna().unique()],
+            value='All',
+            multi=False,
+            clearable=False,
+            placeholder="Choose a Sport"
+        ),
+        dcc.Graph(id="medals-count")
     ])
 
 @app.callback(
@@ -120,8 +164,10 @@ def update_fig1(selected_countries, selected_sport):
     if selected_sport != 'All':
         filtered_df = filtered_df[filtered_df['Sport Discipline'] == selected_sport]
     medal_counts = filtered_df.groupby(['Country Code', 'Medal Type']).size().reset_index(name='Count')
+    # Color mapping for Gold, Silver, and Bronze
     fig = px.bar(medal_counts, x='Country Code', y='Count', color='Medal Type', barmode='group',
                  color_discrete_map={'Gold Medal': '#FFD700', 'Silver Medal': '#C0C0C0', 'Bronze Medal': '#CD7F32'})
+    # Remove "medal type" from hover information
     fig.update_traces(hovertemplate='<b>Country Code:</b> %{x}<br><b>Count:</b> %{y}<extra></extra>')
     return fig
 
@@ -158,41 +204,38 @@ def update_fig2(slider_value, selected_country):
     filtered_df = df if slider_value == -1 else df[df['Medal Date'].dt.date == df['Medal Date'].dt.date.unique()[slider_value]]
     if selected_country != 'All':
         filtered_df = filtered_df[filtered_df['Country Code'] == selected_country]
+    
+    # Add medal type, country code, gender, and sport discipline to hover information, but remove date and index
     fig = px.line(
         filtered_df,
-        x='Day Month',
-        y=filtered_df.index,  # Use index for y-axis for tracking purposes
+        x='Day Month',  # Day and month will remain as the x-axis but not in hover data
+        y=filtered_df.index,  # The y-axis is based on the index, but index will not be included in hover data
         color='Athlete Name',
         markers=True,
         hover_data={
-            'Medal Type': True,
-            'Country Code': True,
-            'Gender': True,
+            'Medal Type': True, 
+            'Country Code': True, 
+            'Gender': True, 
             'Sport Discipline': True,
-            'Day Month': False,  # Remove 'Day Month' from hover
-            filtered_df.index.name: False  # Remove index from hover
+            'Day Month': False,  # Removing 'Day Month' from hover
+            filtered_df.index.name: False  # Removing index from hover
         }
     )
     return fig
 
 # Figure 3 layout and callback
 def fig3_layout():
-    # Prepare the data for visualization
-    gender_medals = df.groupby(['Medal Type', 'Gender']).size().reset_index(name='Total')
-    fig = px.bar(
-        gender_medals,
-        x='Medal Type',
-        y='Total',
-        color='Gender',
-        color_discrete_map={'M': 'blue', 'F': 'pink'},
-        barmode='group',
-        title='Medal Comparison by Gender'
-    )
-    # Customizing the hover data
-    fig.update_traces(hovertemplate="<b>Medal:</b> %{x}<br><b>Gender:</b> %{color}<br><b>Total:</b> %{y}<extra></extra>")
     return html.Div([
-        html.H1('Comparison of Medals by Gender', style={'textAlign': 'center'}),
-        dcc.Graph(figure=fig)
+        html.H1("Comparison of Genders and Medals", style={'textAlign': 'center'}),
+            dcc.Dropdown(
+            id='country-dropdown-fig3',
+            options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
+            value='All',
+            clearable=False,
+            style={'width': '50%', 'margin': '10px auto'},
+            placeholder="Choose a country"
+        ),
+        dcc.Graph(id='gender-medal-bar-chart')
     ])
 
 @app.callback(
@@ -200,23 +243,9 @@ def fig3_layout():
     [Input('country-dropdown-fig3', 'value')]
 )
 def update_fig3(selected_country):
-    # Apply filtering based on selected country if not 'All'
     filtered_df = df if selected_country == 'All' else df[df['Country Code'] == selected_country]
-    # Prepare the data grouping by Medal Type and Gender
-    medal_counts = filtered_df.groupby(['Medal Type', 'Gender']).size().reset_index(name='Count')
-    # Create the bar chart
-    fig = px.bar(
-        medal_counts,
-        x='Medal Type',
-        y='Count',
-        color='Gender',
-        barmode='group',
-        color_discrete_map={'M': 'blue', 'F': 'pink'},
-        labels={"Medal Type": "Type of Medal", "Count": "Number of Medals"},
-        title="Medal Distribution by Gender"
-    )
-    # Customize hover data to display the correct gender label
-    fig.update_traces(hovertemplate="<b>Medal:</b> %{x}<br><b>Gender:</b> %{color}<br><b>Count:</b> %{y}<extra></extra>")
+    fig = px.bar(filtered_df, x='Medal Type', color='Gender', barmode='group',
+                 color_discrete_map={'M': 'blue', 'F': 'pink'})
     return fig
 
 # Run the app
