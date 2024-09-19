@@ -227,40 +227,34 @@ def update_fig2(slider_value, selected_country):
 def fig3_layout():
     return html.Div([
         html.H1("Comparison of Genders and Medals", style={'textAlign': 'center'}),
-        dcc.Dropdown(
-            id='country-dropdown-fig3',
-            options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
-            value=[],  # Set initial selection to empty for 'All'
-            multi=True,  # Enable multi-selection
-            clearable=True,
-            style={'width': '50%', 'margin': '10px auto'},
-            placeholder="Choose a country"
-        ),
         dcc.Graph(id='gender-medal-bar-chart')
     ])
 
 @app.callback(
     Output('gender-medal-bar-chart', 'figure'),
-    [Input('country-dropdown-fig3', 'value')]
+    [Input('country-dropdown-fig3', 'value')]  # Assuming a country filter might still be used
 )
 def update_fig3(selected_countries):
-    # Filter data based on country selection
+    # Filter data based on country selection, if needed
     filtered_df = df if not selected_countries else df[df['Country Code'].isin(selected_countries)]
+    
+    # Group by Medal Type and Gender, count medals
+    medal_gender_counts = filtered_df.groupby(['Medal Type', 'Gender']).size().reset_index(name='Count')
+
+    # Create the bar chart
     fig = px.bar(
-        filtered_df,
+        medal_gender_counts,
         x='Medal Type',
         y='Count',
         color='Gender',
         barmode='group',
         color_discrete_map={'M': 'blue', 'F': 'pink'},
-        hover_data={
-            'Athlete Name': True,
-            'Country Code': True,
-            'Count': True
-        }
+        category_orders={"Medal Type": ["Gold Medal", "Silver Medal", "Bronze Medal"]}  # Ensuring consistent order
     )
-    # Remove gender from hover, customize other hover details
-    fig.update_traces(hovertemplate="<b>%{x}</b><br>Athlete Name: %{customdata[0]}<br>Country: %{customdata[1]}<br>Count: %{y}<extra></extra>")
+    
+    # Customize hover data
+    fig.update_traces(hovertemplate="<b>%{x}</b><br>Gender: %{color}<br>Count: %{y}<extra></extra>")
+    
     return fig
 
 # Run the app
