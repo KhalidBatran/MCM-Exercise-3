@@ -189,11 +189,12 @@ def fig2_layout():
             placeholder="Choose a country"
         ),
         
-        # Athlete Names filter dropdown with "All" as default
+        # Athlete Names filter dropdown with "All" as default (single-selection)
         dcc.Dropdown(
             id='athlete-dropdown-fig2',
             options=[{'label': 'All', 'value': 'All'}] + [{'label': name, 'value': name} for name in df['Athlete Name'].unique()],
             value='All',  # Default to "All"
+            multi=False,  # Single selection dropdown
             placeholder="Choose Athlete",
             style={'width': '50%', 'margin': '10px auto'}
         ),
@@ -206,9 +207,8 @@ def fig2_layout():
             min=-1,
             max=len(df['Medal Date'].dt.date.unique()) - 1,
             value=-1,
-            marks=slider_marks,
-            step=None
-        )
+            marks=slider_marks
+        ),
     ])
 
 # Callback for updating the figure
@@ -216,22 +216,25 @@ def fig2_layout():
     Output('medals-line-chart', 'figure'),
     [Input('date-slider', 'value'), 
      Input('country-dropdown-fig2', 'value'),
-     Input('athlete-dropdown-fig2', 'value')]  # Add athlete filter input
+     Input('athlete-dropdown-fig2', 'value')]  # Athlete filter input
 )
 def update_fig2(slider_value, selected_country, selected_athletes):
+    # Apply date filter
     filtered_df = df if slider_value == -1 else df[df['Medal Date'].dt.date == df['Medal Date'].dt.date.unique()[slider_value]]
-    
+
+    # Apply country filter
     if selected_country != 'All':
         filtered_df = filtered_df[filtered_df['Country Code'] == selected_country]
-    
-    if 'All' not in selected_athletes:  # Only filter by selected athletes if "All" is not selected
-        filtered_df = filtered_df[filtered_df['Athlete Name'].isin(selected_athletes)]
-    
-    # Use the index as the y-axis, but remove it from the hover data
+
+    # Apply athlete filter, treat "All" as showing all athletes
+    if selected_athletes != 'All':
+        filtered_df = filtered_df[filtered_df['Athlete Name'] == selected_athletes]
+
+    # Create the figure, excluding date and index from the hover information
     fig = px.line(
         filtered_df,
         x='Day Month',
-        y=filtered_df.index,  # Restore the index as the y-axis
+        y=filtered_df.index,
         color='Athlete Name',
         markers=True,
         hover_data={
@@ -240,7 +243,7 @@ def update_fig2(slider_value, selected_country, selected_athletes):
             'Gender': True, 
             'Sport Discipline': True,
             'Day Month': False,  # Exclude 'Day Month' from hover
-            filtered_df.index.name: False  # Exclude the index from the hover
+            filtered_df.index.name: False  # Exclude index from hover
         }
     )
     return fig
@@ -249,7 +252,7 @@ def update_fig2(slider_value, selected_country, selected_athletes):
 def fig3_layout():
     return html.Div([
         html.H1("Comparison of Genders and Medals", style={'textAlign': 'center'}),
-            dcc.Dropdown(
+        dcc.Dropdown(
             id='country-dropdown-fig3',
             options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
             value='All',
@@ -266,19 +269,8 @@ def fig3_layout():
 )
 def update_fig3(selected_country):
     filtered_df = df if selected_country == 'All' else df[df['Country Code'] == selected_country]
-    
-    # Group the data by 'Medal Type', 'Country Code', and 'Athlete Name' to get the count
-    medal_counts = filtered_df.groupby(['Medal Type', 'Country Code', 'Athlete Name']).size().reset_index(name='Count')
-
-    # Create the bar chart
-    fig = px.bar(medal_counts, x='Medal Type', y='Count', color='Country Code', barmode='group',
-                 hover_data={
-                     'Athlete Name': True,  # Show the athlete's name in hover
-                     'Country Code': True,  # Show the country code in hover
-                     'Count': True,  # Show the count in hover
-                     'Gender': False  # Remove the gender from hover
-                 })
-
+    fig = px.bar(filtered_df, x='Medal Type', color='Gender', barmode='group',
+                 color_discrete_map={'M': 'blue', 'F': 'pink'})
     return fig
 
 # Run the app
