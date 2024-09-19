@@ -235,11 +235,17 @@ def fig3_layout():
     Input('country-dropdown-fig3', 'value')
 )
 def update_fig3(selected_country):
+    # Filter the dataframe based on selected country
     filtered_df = df if selected_country == 'All' else df[df['Country Code'] == selected_country]
+    
+    # Aggregate data by gender and medal type
+    medal_counts = filtered_df.groupby(['Gender', 'Medal Type']).size().reset_index(name='Count')
+    
     # Create the new bar chart faceted by gender
     fig = px.bar(
-        filtered_df,
+        medal_counts,
         x='Medal Type',
+        y='Count',
         color='Gender',
         barmode='group',
         facet_col='Gender',
