@@ -232,14 +232,24 @@ def fig3_layout():
 
 @app.callback(
     Output('gender-medal-bar-chart', 'figure'),
-    [Input('country-dropdown-fig3', 'value')]  # Assuming a country filter might still be used
+    [Input('country-dropdown-fig3', 'value')]  # Assuming the dropdown is still in use
 )
 def update_fig3(selected_countries):
-    # Filter data based on country selection, if needed
-    filtered_df = df if not selected_countries else df[df['Country Code'].isin(selected_countries)]
+    if not selected_countries or 'All' in selected_countries:
+        filtered_df = df
+    else:
+        filtered_df = df[df['Country Code'].isin(selected_countries)]
+
+    # Check if the DataFrame is empty after filtering
+    if filtered_df.empty:
+        print("Filtered DataFrame is empty.")  # Check your console or logs for this output
+        return px.bar(title="No data available for the selected filters.")
     
     # Group by Medal Type and Gender, count medals
     medal_gender_counts = filtered_df.groupby(['Medal Type', 'Gender']).size().reset_index(name='Count')
+    
+    # Debug output to see the grouped data
+    print(medal_gender_counts)  # Check your console or logs for this output
 
     # Create the bar chart
     fig = px.bar(
