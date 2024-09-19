@@ -223,7 +223,7 @@ def update_fig2(slider_value, selected_country):
     )
     return fig
 
-# Figure 3 layout and callback
+# Figure 3 layout and callback using a different visualization approach
 def fig3_layout():
     return html.Div([
         html.H1("Comparison of Genders and Medals", style={'textAlign': 'center'}),
