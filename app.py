@@ -226,28 +226,29 @@ def update_fig2(slider_value, selected_country):
 # Figure 3 layout and callback
 def fig3_layout():
     return html.Div([
-        html.H1("Comparison of Genders and Medals", style={'textAlign': 'center'}),
-            dcc.Dropdown(
-            id='country-dropdown-fig3',
-            options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
-            value='All',
-            clearable=False,
-            style={'width': '50%', 'margin': '10px auto'},
-            placeholder="Choose a country"
-        ),
-        dcc.Graph(id='gender-medal-bar-chart')
+        html.H1("Total Medals by Gender", style={'textAlign': 'center'}),
+        dcc.Graph(id='gender-medal-facet-bar-chart')
     ])
 
 @app.callback(
-    Output('gender-medal-bar-chart', 'figure'),
-    [Input('country-dropdown-fig3', 'value')]
+    Output('gender-medal-facet-bar-chart', 'figure'),
+    Input('country-dropdown-fig3', 'value')
 )
 def update_fig3(selected_country):
     filtered_df = df if selected_country == 'All' else df[df['Country Code'] == selected_country]
-    fig = px.bar(filtered_df, x='Medal Type', color='Gender', barmode='group',
-                 color_discrete_map={'M': 'blue', 'F': 'pink'})
+    # Create the new bar chart faceted by gender
+    fig = px.bar(
+        filtered_df,
+        x='Medal Type',
+        color='Gender',
+        barmode='group',
+        facet_col='Gender',
+        category_orders={"Medal Type": ["Bronze Medal", "Silver Medal", "Gold Medal"], 
+                         "Gender": ["M", "F"]},
+        color_discrete_map={"M": "blue", "F": "pink"}
+    )
     return fig
-
+    
 # Run the app
 if __name__ == "__main__":
     app.run_server(debug=True)
