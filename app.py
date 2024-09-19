@@ -244,24 +244,23 @@ def fig3_layout():
     [Input('country-dropdown-fig3', 'value')]
 )
 def update_fig3(selected_countries):
-    # Handle the 'All' selection
-    if 'All' in selected_countries:
-        filtered_df = df  # If 'All' is selected, use the entire dataframe
+    if 'All' in selected_countries or not selected_countries:
+        filtered_df = df
     else:
         filtered_df = df[df['Country Code'].isin(selected_countries)]
 
+    # Compute the medal counts
+    medal_counts = filtered_df.groupby(['Gender', 'Medal Type']).size().reset_index(name='Count')
+
     fig = px.bar(
-        filtered_df,
+        medal_counts,
         x='Medal Type',
-        y='Medal Count',
+        y='Count',
         color='Gender',
         barmode='group',
         facet_col='Gender',
         color_discrete_map={'M': 'blue', 'F': 'pink'},
-        category_orders={
-            "Medal Type": ["Bronze Medal", "Silver Medal", "Gold Medal"], 
-            "Gender": ["M", "F"]
-        }
+        category_orders={"Medal Type": ["Bronze Medal", "Silver Medal", "Gold Medal"], "Gender": ["M", "F"]}
     )
     return fig
     
