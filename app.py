@@ -230,46 +230,37 @@ def fig3_layout():
         dcc.Dropdown(
             id='country-dropdown-fig3',
             options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
-            value='All',
-            multi=True,  # Enable multi-selection for country filter
-            clearable=False,
+            value=[],  # Set initial selection to empty for 'All'
+            multi=True,  # Enable multi-selection
+            clearable=True,
             style={'width': '50%', 'margin': '10px auto'},
             placeholder="Choose a country"
-        ),
-        dcc.DatePickerRange(
-            id='date-picker-fig3',
-            start_date=df['Medal Date'].min(),
-            end_date=df['Medal Date'].max(),
-            display_format='YYYY-MM-DD',
-            style={'margin': '20px auto', 'textAlign': 'center'}
         ),
         dcc.Graph(id='gender-medal-bar-chart')
     ])
 
 @app.callback(
     Output('gender-medal-bar-chart', 'figure'),
-    [Input('country-dropdown-fig3', 'value'),
-     Input('date-picker-fig3', 'start_date'),
-     Input('date-picker-fig3', 'end_date')]
+    [Input('country-dropdown-fig3', 'value')]
 )
-def update_fig3(selected_countries, start_date, end_date):
-    filtered_df = df.copy()
-
-    # Filter by selected countries
-    if 'All' not in selected_countries:
-        filtered_df = filtered_df[filtered_df['Country Code'].isin(selected_countries)]
-
-    # Filter by date range
-    filtered_df = filtered_df[(filtered_df['Medal Date'] >= start_date) & (filtered_df['Medal Date'] <= end_date)]
-
-    # Create bar chart and update hover information
-    fig = px.bar(filtered_df, x='Medal Type', color='Athlete Name', barmode='group',
-                 hover_data={
-                     'Athlete Name': True,
-                     'Country Code': True,
-                     'Gender': False  # Removing gender from hover
-                 })
-
+def update_fig3(selected_countries):
+    # Filter data based on country selection
+    filtered_df = df if not selected_countries else df[df['Country Code'].isin(selected_countries)]
+    fig = px.bar(
+        filtered_df,
+        x='Medal Type',
+        y='Count',
+        color='Gender',
+        barmode='group',
+        color_discrete_map={'M': 'blue', 'F': 'pink'},
+        hover_data={
+            'Athlete Name': True,
+            'Country Code': True,
+            'Count': True
+        }
+    )
+    # Remove gender from hover, customize other hover details
+    fig.update_traces(hovertemplate="<b>%{x}</b><br>Athlete Name: %{customdata[0]}<br>Country: %{customdata[1]}<br>Count: %{y}<extra></extra>")
     return fig
 
 # Run the app
