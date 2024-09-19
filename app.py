@@ -194,7 +194,7 @@ def fig2_layout():
             id='athlete-dropdown-fig2',
             options=[{'label': 'All', 'value': 'All'}] + [{'label': name, 'value': name} for name in df['Athlete Name'].unique()],
             value='All',  # Default to "All"
-            placeholder="Choose Athlete(s)",
+            placeholder="Choose Athlete",
             style={'width': '50%', 'margin': '10px auto'}
         ),
         
