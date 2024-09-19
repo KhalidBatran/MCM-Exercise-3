@@ -266,8 +266,19 @@ def fig3_layout():
 )
 def update_fig3(selected_country):
     filtered_df = df if selected_country == 'All' else df[df['Country Code'] == selected_country]
-    fig = px.bar(filtered_df, x='Medal Type', color='Gender', barmode='group',
-                 color_discrete_map={'M': 'blue', 'F': 'pink'})
+    
+    # Group the data by 'Medal Type', 'Country Code', and 'Athlete Name' to get the count
+    medal_counts = filtered_df.groupby(['Medal Type', 'Country Code', 'Athlete Name']).size().reset_index(name='Count')
+
+    # Create the bar chart
+    fig = px.bar(medal_counts, x='Medal Type', y='Count', color='Country Code', barmode='group',
+                 hover_data={
+                     'Athlete Name': True,  # Show the athlete's name in hover
+                     'Country Code': True,  # Show the country code in hover
+                     'Count': True,  # Show the count in hover
+                     'Gender': False  # Remove the gender from hover
+                 })
+
     return fig
 
 # Run the app
