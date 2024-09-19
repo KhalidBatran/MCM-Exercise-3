@@ -204,9 +204,15 @@ def update_fig2(slider_value, selected_country):
     filtered_df = df if slider_value == -1 else df[df['Medal Date'].dt.date == df['Medal Date'].dt.date.unique()[slider_value]]
     if selected_country != 'All':
         filtered_df = filtered_df[filtered_df['Country Code'] == selected_country]
-    # Add medal type, country code, and gender to hover information
-    fig = px.line(filtered_df, x='Day Month', y=filtered_df.index, color='Athlete Name', markers=True,
-                  hover_data={'Medal Type': True, 'Country Code': True, 'Gender': True})
+    # Add medal type, country code, gender, and sport discipline to hover information
+    fig = px.line(
+        filtered_df,
+        x='Day Month',
+        y=filtered_df.index,
+        color='Athlete Name',
+        markers=True,
+        hover_data={'Medal Type': True, 'Country Code': True, 'Gender': True, 'Sport Discipline': True}
+    )
     return fig
 
 # Figure 3 layout and callback
