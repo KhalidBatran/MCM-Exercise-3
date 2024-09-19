@@ -227,16 +227,27 @@ def update_fig2(slider_value, selected_country):
 def fig3_layout():
     return html.Div([
         html.H1("Total Medals by Gender", style={'textAlign': 'center'}),
+        dcc.Dropdown(
+            id='country-dropdown-fig3',
+            options=[{'label': i, 'value': i} for i in df['Country Code'].unique()],
+            value=['All'],  # Default to 'All' if it makes sense, or adjust as needed
+            multi=True,
+            style={'width': '50%', 'margin': '10px auto'},
+            placeholder="Select countries"
+        ),
         dcc.Graph(id='gender-medal-facet-bar-chart')
     ])
 
 @app.callback(
     Output('gender-medal-facet-bar-chart', 'figure'),
-    Input('url', 'pathname')  # Dummy input to trigger the callback
+    [Input('country-dropdown-fig3', 'value')]
 )
-def update_fig3(pathname):
-    # Use the full dataframe without filtering by country
-    filtered_df = df.copy()
+def update_fig3(selected_countries):
+    # Filter the dataframe based on selected countries
+    if 'All' in selected_countries or not selected_countries:
+        filtered_df = df
+    else:
+        filtered_df = df[df['Country Code'].isin(selected_countries)]
     
     # Aggregate data by gender and medal type
     medal_counts = filtered_df.groupby(['Gender', 'Medal Type']).size().reset_index(name='Count')
