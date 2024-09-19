@@ -16,7 +16,7 @@ df['Medal Date'] = pd.to_datetime(df['Medal Date'], errors='coerce', format='%d-
 df = df.dropna(subset=['Medal Date'])
 df['Day Month'] = df['Medal Date'].dt.strftime('%d %b')
 
-# Styling for the sidebar and content
+# Sidebar layout
 SIDEBAR_STYLE = {
     "position": "fixed",
     "top": 0,
@@ -50,9 +50,9 @@ sidebar = html.Div(
         dbc.Nav(
             [
                 dbc.NavLink("Home", href="/", active="exact"),
-                dbc.NavLink("Figure 1", href="/fig1", active="exact"),
-                dbc.NavLink("Figure 2", href="/fig2", active="exact"),
-                dbc.NavLink("Figure 3", href="/fig3", active="exact"),
+                dbc.NavLink("Olympics Bar Chart", href="/fig1", active="exact"),
+                dbc.NavLink("Olympics Line Progression", href="/fig2", active="exact"),
+                dbc.NavLink("Olympics Gender Comparison", href="/fig3", active="exact"),
             ],
             vertical=True,
             pills=True,
@@ -85,15 +85,15 @@ def home_layout():
             html.P("Welcome to the Olympic Medals Dashboard! Here, you can explore data from the Olympic Games for this year. "
                    "This dashboard provides insights into Olympic athletes and their achievements."),
             html.Br(),
-            html.H2("Figure 1: Olympic Medals Count by Country"),
+            html.H2("Olympics Bar Chart"),
             html.P("This visualization allows you to explore the total count of Olympic medals won by different countries, "
                    "broken down by medal type (Gold, Silver, Bronze). You can filter the data by country and sport."),
             html.Br(),
-            html.H2("Figure 2: Olympic Athletes' Medal Progression by Date"),
+            html.H2("Olympics Line Progression"),
             html.P("This chart shows how athletes' medal counts progress over the dates of the competition. You can filter the data "
                    "by country and specific dates."),
             html.Br(),
-            html.H2("Figure 3: Comparison of Genders and Medals"),
+            html.H2("Olympics Gender Comparison"),
             html.P("This bar chart compares the medals won by athletes of different genders, broken down by medal type. "
                    "You can filter the data by country."),
         ]
@@ -164,8 +164,9 @@ def update_fig1(selected_countries, selected_sport):
     if selected_sport != 'All':
         filtered_df = filtered_df[filtered_df['Sport Discipline'] == selected_sport]
     medal_counts = filtered_df.groupby(['Country Code', 'Medal Type']).size().reset_index(name='Count')
+    # Color mapping for Gold, Silver, and Bronze
     fig = px.bar(medal_counts, x='Country Code', y='Count', color='Medal Type', barmode='group',
-                 color_discrete_map={'Gold Medal': 'red', 'Silver Medal': 'blue', 'Bronze Medal': 'green'})
+                 color_discrete_map={'Gold Medal': '#FFD700', 'Silver Medal': '#C0C0C0', 'Bronze Medal': '#CD7F32'})
     return fig
 
 # Figure 2 layout and callback
