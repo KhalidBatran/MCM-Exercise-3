@@ -204,14 +204,22 @@ def update_fig2(slider_value, selected_country):
     filtered_df = df if slider_value == -1 else df[df['Medal Date'].dt.date == df['Medal Date'].dt.date.unique()[slider_value]]
     if selected_country != 'All':
         filtered_df = filtered_df[filtered_df['Country Code'] == selected_country]
-    # Add medal type, country code, gender, and sport discipline to hover information
+    
+    # Add medal type, country code, gender, and sport discipline to hover information, but remove date and index
     fig = px.line(
         filtered_df,
-        x='Day Month',
-        y=filtered_df.index,
+        x='Day Month',  # Day and month will remain as the x-axis but not in hover data
+        y=filtered_df.index,  # The y-axis is based on the index, but index will not be included in hover data
         color='Athlete Name',
         markers=True,
-        hover_data={'Medal Type': True, 'Country Code': True, 'Gender': True, 'Sport Discipline': True}
+        hover_data={
+            'Medal Type': True, 
+            'Country Code': True, 
+            'Gender': True, 
+            'Sport Discipline': True,
+            'Day Month': False,  # Removing 'Day Month' from hover
+            filtered_df.index.name: False  # Removing index from hover
+        }
     )
     return fig
 
