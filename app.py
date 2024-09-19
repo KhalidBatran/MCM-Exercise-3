@@ -232,16 +232,16 @@ def fig3_layout():
 
 @app.callback(
     Output('gender-medal-facet-bar-chart', 'figure'),
-    Input('country-dropdown-fig3', 'value')
+    Input('url', 'pathname')  # Dummy input to trigger the callback
 )
-def update_fig3(selected_country):
-    # Filter the dataframe based on selected country
-    filtered_df = df if selected_country == 'All' else df[df['Country Code'] == selected_country]
+def update_fig3(pathname):
+    # Use the full dataframe without filtering by country
+    filtered_df = df.copy()
     
     # Aggregate data by gender and medal type
     medal_counts = filtered_df.groupby(['Gender', 'Medal Type']).size().reset_index(name='Count')
     
-    # Create the new bar chart faceted by gender
+    # Create the bar chart faceted by gender
     fig = px.bar(
         medal_counts,
         x='Medal Type',
@@ -249,8 +249,10 @@ def update_fig3(selected_country):
         color='Gender',
         barmode='group',
         facet_col='Gender',
-        category_orders={"Medal Type": ["Bronze Medal", "Silver Medal", "Gold Medal"], 
-                         "Gender": ["M", "F"]},
+        category_orders={
+            "Medal Type": ["Bronze Medal", "Silver Medal", "Gold Medal"], 
+            "Gender": ["M", "F"]
+        },
         color_discrete_map={"M": "blue", "F": "pink"}
     )
     return fig
