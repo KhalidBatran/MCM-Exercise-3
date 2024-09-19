@@ -177,6 +177,8 @@ def fig2_layout():
     slider_marks[-1] = {'label': 'All'}
     return html.Div([
         html.H1("Olympic Athletes' Medal Progression by Date", style={'textAlign': 'center'}),
+        
+        # Country filter dropdown
         dcc.Dropdown(
             id='country-dropdown-fig2',
             options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
@@ -185,7 +187,20 @@ def fig2_layout():
             style={'width': '50%', 'margin': '10px auto'},
             placeholder="Choose a country"
         ),
+        
+        # New Athlete Names filter dropdown
+        dcc.Dropdown(
+            id='athlete-dropdown-fig2',
+            options=[{'label': name, 'value': name} for name in df['Athlete Name'].unique()],
+            value=[],
+            multi=True,  # Enable multi-selection for athlete names
+            placeholder="Choose Athlete(s)",
+            style={'width': '50%', 'margin': '10px auto'}
+        ),
+        
         dcc.Graph(id='medals-line-chart'),
+        
+        # Slider for date filtering
         dcc.Slider(
             id='date-slider',
             min=-1,
@@ -196,20 +211,30 @@ def fig2_layout():
         )
     ])
 
+# Callback for updating the figure
 @app.callback(
     Output('medals-line-chart', 'figure'),
-    [Input('date-slider', 'value'), Input('country-dropdown-fig2', 'value')]
+    [Input('date-slider', 'value'), 
+     Input('country-dropdown-fig2', 'value'),
+     Input('athlete-dropdown-fig2', 'value')]  # Add athlete filter input
 )
-def update_fig2(slider_value, selected_country):
+def update_fig2(slider_value, selected_country, selected_athletes):
     filtered_df = df if slider_value == -1 else df[df['Medal Date'].dt.date == df['Medal Date'].dt.date.unique()[slider_value]]
+    
     if selected_country != 'All':
         filtered_df = filtered_df[filtered_df['Country Code'] == selected_country]
     
-    # Add medal type, country code, gender, and sport discipline to hover information, but remove date and index
+    if selected_athletes:
+        filtered_df = filtered_df[filtered_df['Athlete Name'].isin(selected_athletes)]
+    
+    # Create a new column 'Rank' to use as the y-axis instead of the index
+    filtered_df['Rank'] = range(1, len(filtered_df) + 1)
+    
+    # Add medal type, country code, gender, and sport discipline to hover information, but remove index
     fig = px.line(
         filtered_df,
-        x='Day Month',  # Day and month will remain as the x-axis but not in hover data
-        y=filtered_df.index,  # The y-axis is based on the index, but index will not be included in hover data
+        x='Day Month',
+        y='Rank',  # Use the new 'Rank' column as the y-axis
         color='Athlete Name',
         markers=True,
         hover_data={
@@ -217,8 +242,6 @@ def update_fig2(slider_value, selected_country):
             'Country Code': True, 
             'Gender': True, 
             'Sport Discipline': True,
-            'Day Month': False,  # Removing 'Day Month' from hover
-            filtered_df.index.name: False  # Removing index from hover
         }
     )
     return fig
