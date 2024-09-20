@@ -4,11 +4,9 @@ from dash import Input, Output, dcc, html
 import pandas as pd
 import plotly.express as px
 
-# Initialize the Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
 server = app.server
 
-# Load the cleaned dataset
 df = pd.read_csv("https://raw.githubusercontent.com/KhalidBatran/MCM-Exercise-3/main/assets/Olympics%202024.csv")
 
 # Ensure 'Medal Date' is parsed correctly, handling the specific format
@@ -164,10 +162,10 @@ def update_fig1(selected_countries, selected_sport):
     if selected_sport != 'All':
         filtered_df = filtered_df[filtered_df['Sport Discipline'] == selected_sport]
     medal_counts = filtered_df.groupby(['Country Code', 'Medal Type']).size().reset_index(name='Count')
-    # Color mapping for Gold, Silver, and Bronze
+
     fig = px.bar(medal_counts, x='Country Code', y='Count', color='Medal Type', barmode='group',
                  color_discrete_map={'Gold Medal': '#FFD700', 'Silver Medal': '#C0C0C0', 'Bronze Medal': '#CD7F32'})
-    # Remove "medal type" from hover information
+
     fig.update_traces(hovertemplate='<b>Country Code:</b> %{x}<br><b>Count:</b> %{y}<extra></extra>')
     return fig
 
@@ -205,11 +203,10 @@ def update_fig2(slider_value, selected_country):
     if selected_country != 'All':
         filtered_df = filtered_df[filtered_df['Country Code'] == selected_country]
     
-    # Add medal type, country code, gender, and sport discipline to hover information, but remove date and index
     fig = px.line(
         filtered_df,
-        x='Day Month',  # Day and month will remain as the x-axis but not in hover data
-        y=filtered_df.index,  # The y-axis is based on the index, but index will not be included in hover data
+        x='Day Month',
+        y=filtered_df.index,
         color='Athlete Name',
         markers=True,
         hover_data={
@@ -217,8 +214,8 @@ def update_fig2(slider_value, selected_country):
             'Country Code': True, 
             'Gender': True, 
             'Sport Discipline': True,
-            'Day Month': False,  # Removing 'Day Month' from hover
-            filtered_df.index.name: False  # Removing index from hover
+            'Day Month': False,
+            filtered_df.index.name: False
         }
     )
     return fig
@@ -230,7 +227,7 @@ def fig3_layout():
         dcc.Dropdown(
             id='country-dropdown-fig3',
             options=[{'label': 'All', 'value': 'All'}] + [{'label': country, 'value': country} for country in df['Country Code'].unique()],
-            value='All',  # Set 'All' as the default value
+            value='All',
             multi=True,
             clearable=False,
             style={'width': '50%', 'margin': '10px auto'},
@@ -249,7 +246,6 @@ def update_fig3(selected_countries):
     else:
         filtered_df = df[df['Country Code'].isin(selected_countries)]
 
-    # Compute the medal counts
     medal_counts = filtered_df.groupby(['Gender', 'Medal Type']).size().reset_index(name='Count')
 
     fig = px.bar(
@@ -264,6 +260,5 @@ def update_fig3(selected_countries):
     )
     return fig
     
-# Run the app
 if __name__ == "__main__":
     app.run_server(debug=True)
